@@ -200,6 +200,19 @@ export function useChatbot() {
       };
       setMessages((prev) => [...prev, userMsg]);
       setInputText("");
+
+      const USER_HANDOFF_SIGNALS = [
+        "talk to a human", "speak to a human", "speak to someone",
+        "talk to someone", "want a human", "need a human",
+        "connect me to", "real person", "live agent", "live support",
+        "human support", "human agent", "talk to support",
+      ];
+      if (USER_HANDOFF_SIGNALS.some((s) => text.toLowerCase().includes(s))) {
+        setShouldHandoff(true);
+        setIsTyping(false);
+        return;
+      }
+
       setIsTyping(true);
 
       try {

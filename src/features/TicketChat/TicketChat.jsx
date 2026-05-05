@@ -198,7 +198,9 @@ export default function TicketChat({ adminView = false } = {}) {
     const isMissingTable = (err) => {
       if (!err) return false;
       const msg = String(err.message || "").toLowerCase();
-      return msg.includes("ticket_sla_history") && msg.includes("could not find");
+      return (
+        msg.includes("ticket_sla_history") && msg.includes("could not find")
+      );
     };
 
     const loadHistory = async () => {
@@ -455,7 +457,9 @@ export default function TicketChat({ adminView = false } = {}) {
     if (!adminIds.size) return;
 
     adminDirectoryRef.current = adminDirectory;
-    const missingIds = Array.from(adminIds).filter((id) => !adminDirectoryRef.current[id]);
+    const missingIds = Array.from(adminIds).filter(
+      (id) => !adminDirectoryRef.current[id],
+    );
 
     if (!missingIds.length) return;
 
@@ -593,11 +597,12 @@ export default function TicketChat({ adminView = false } = {}) {
               Assignee3: ticket.Assignee3 || null,
             };
             assignPayload[emptySlot] = senderId;
-            const { data: ticketData, error: assignErr } = await realtimeSupabase
-              .from("Tickets")
-              .update(assignPayload)
-              .eq("id", ticket.id)
-              .select();
+            const { data: ticketData, error: assignErr } =
+              await realtimeSupabase
+                .from("Tickets")
+                .update(assignPayload)
+                .eq("id", ticket.id)
+                .select();
             if (!assignErr && ticketData?.[0]) {
               setTicket(ticketData[0]);
               cacheTicket(id, ticketData[0]);
@@ -733,11 +738,7 @@ export default function TicketChat({ adminView = false } = {}) {
           <p>{error}</p>
           <button
             onClick={() => navigate(-1)}
-            style={{
-              marginTop: "20px",
-              padding: "10px 20px",
-              cursor: "pointer",
-            }}
+            className="mt-5 px-5 py-2.5 cursor-pointer"
           >
             Go Back
           </button>

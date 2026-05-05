@@ -154,12 +154,9 @@ export default function TicketDetails({
 
           <button
             onClick={onToggleTimeline}
-            className="bg-white text-lpu-maroon border border-lpu-maroon/30 p-2.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 hover:bg-lpu-maroon hover:text-white hover:border-lpu-maroon transition-all shadow-sm active:scale-95 group shrink-0"
+            className="bg-white text-lpu-maroon border border-lpu-maroon/30 p-2.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 hover:bg-lpu-maroon hover:text-white hover:border-lpu-maroon transition-all shadow-sm active:scale-95 shrink-0"
           >
-            <Clock
-              size={16}
-              className="group-hover:rotate-12 transition-transform"
-            />
+            <Clock size={16} />
             <span className="hidden sm:inline font-bold uppercase text-xs tracking-tight">
               Timeline
             </span>
@@ -172,12 +169,9 @@ export default function TicketDetails({
 
           <button
             onClick={onToggleSummary}
-            className="bg-lpu-maroon text-white p-2.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 hover:bg-lpu-red transition-all shadow-sm active:scale-95 group shrink-0"
+            className="bg-lpu-maroon text-white p-2.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 hover:bg-lpu-gold hover:text-lpu-maroon transition-all shadow-lg shadow-lpu-maroon/20 active:scale-95 shrink-0"
           >
-            <FileText
-              size={16}
-              className="group-hover:rotate-12 transition-transform"
-            />
+            <FileText size={16} />
             <span className="hidden sm:inline font-bold uppercase text-xs tracking-tight">
               Summary
             </span>

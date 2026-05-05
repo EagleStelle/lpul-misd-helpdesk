@@ -1,4 +1,4 @@
-import { ArrowLeft, Bot } from "lucide-react";
+import { ArrowLeft, Bot, UserRound } from "lucide-react";
 
 export default function ChatHeader({
   adminView,
@@ -8,6 +8,7 @@ export default function ChatHeader({
   adminParticipants,
   isBotTicket,
   onBack,
+  onTalkToHuman,
 }) {
   const participants = Array.isArray(adminParticipants)
     ? adminParticipants
@@ -16,7 +17,7 @@ export default function ChatHeader({
   return (
     <div className="flex items-center p-3 border-b border-gray-100 bg-white shrink-0">
       <button
-        className="p-2 mr-2 rounded-full hover:bg-gray-100 transition-colors shrink-0"
+        className="p-2 mr-2 rounded-full hover:bg-gray-100 transition-colors shrink-0 cursor-pointer"
         onClick={onBack}
       >
         <ArrowLeft size={18} className="text-gray-600" />
@@ -74,6 +75,17 @@ export default function ChatHeader({
           </div>
         )}
       </div>
+
+      {onTalkToHuman && (
+        <button
+          type="button"
+          onClick={onTalkToHuman}
+          className="ml-2 bg-lpu-maroon text-white p-2.5 sm:px-4 sm:py-2 rounded-xl flex items-center gap-2 hover:bg-lpu-gold hover:text-lpu-maroon transition-all shadow-lg shadow-lpu-maroon/20 active:scale-95 shrink-0"
+        >
+          <UserRound size={16} />
+          <span className="hidden sm:inline font-bold uppercase text-xs tracking-tight">Talk to a human</span>
+        </button>
+      )}
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { Send } from "lucide-react";
 
 const MAX_HEIGHT = 160;
 
-export default function ChatInput({ text, onTextChange, onSend }) {
+export default function ChatInput({ text, onTextChange, onSend, disabled = false, placeholder }) {
   const textareaRef = useRef(null);
 
   useLayoutEffect(() => {
@@ -38,7 +38,8 @@ export default function ChatInput({ text, onTextChange, onSend }) {
           value={text}
           onChange={(e) => onTextChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="type your message here..."
+          placeholder={placeholder || "type your message here..."}
+          disabled={disabled}
         />
         <button
           className="p-2.5 bg-lpu-maroon text-white rounded-xl hover:bg-lpu-red active:scale-95 transition-all shadow-[4px_4px_10px_rgba(125,0,6,0.12)] shrink-0"
