@@ -51,7 +51,7 @@ function EntryForm({
         required={false}
       />
       <FloatingTextarea
-        label="Content"
+        label="Content (Required)"
         value={text}
         onChange={(e) => setText(e.target.value)}
         heightClass="h-[260px]"
@@ -124,7 +124,7 @@ export default function AdminKnowledge() {
       } else {
         const params = new URLSearchParams({
           limit: PAGE_SIZE,
-          offset: currentPage * PAGE_SIZE,
+          page: String(currentPage + 1),
         });
         const res = await fetch(apiUrl(`/api/knowledge?${params}`), {
           headers: getAuthHeader(),
@@ -381,7 +381,7 @@ export default function AdminKnowledge() {
             saving={adding}
             onSave={handleAdd}
             onCancel={() => setShowAddModal(false)}
-            saveLabel="Embed & Save"
+            saveLabel="Save Entry"
           />
         </KnowledgeEntryModal>
       )}

@@ -102,6 +102,51 @@ router.post("/", adminMiddleware, async (req, res) => {
   });
 });
 
+// PUT /api/knowledge/:id — update a knowledge entry (re-embeds)
+router.put("/:id", adminMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const { text, title } = req.body;
+
+  if (!text?.trim())
+    return res.status(400).json({ success: false, error: "text required" });
+
+  const trimmedText = text.trim();
+  const resolvedTitle = resolveTitle(trimmedText, title);
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("knowledge_base")
+    .select("metadata")
+    .eq("id", id)
+    .single();
+
+  if (fetchError)
+    return res.status(404).json({ success: false, error: fetchError.message });
+
+  try {
+    const embedding = await embedText(trimmedText);
+    const updatedMetadata = {
+      ...(existing?.metadata || {}),
+      source: existing?.metadata?.source || "manual",
+      title: resolvedTitle,
+    };
+
+    const { data, error } = await supabase
+      .from("knowledge_base")
+      .update({ content: trimmedText, metadata: updatedMetadata, embedding })
+      .eq("id", id)
+      .select("id, content, metadata")
+      .single();
+
+    if (error)
+      return res.status(500).json({ success: false, error: error.message });
+
+    return res.json({ success: true, data });
+  } catch (err) {
+    console.error("[Knowledge API Update Error]:", err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // DELETE /api/knowledge/:id
 router.delete("/:id", adminMiddleware, async (req, res) => {
   const { id } = req.params;
