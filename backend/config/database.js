@@ -377,6 +377,164 @@ export const initializeDatabase = async () => {
       );
     }
 
+    // Knowledge base table (RAG / chatbot)
+    try {
+      await supabase.rpc("execute_sql", {
+        sql: `
+          CREATE EXTENSION IF NOT EXISTS vector;
+
+          CREATE TABLE IF NOT EXISTS knowledge_base (
+            id BIGSERIAL PRIMARY KEY,
+            content TEXT NOT NULL,
+            metadata JSONB DEFAULT '{}'::jsonb,
+            embedding vector(768),
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_knowledge_base_embedding
+            ON knowledge_base USING ivfflat (embedding vector_cosine_ops)
+            WITH (lists = 100);
+
+          CREATE OR REPLACE FUNCTION search_knowledge_base(
+            query_embedding vector(768),
+            match_threshold FLOAT,
+            match_count INT
+          )
+          RETURNS TABLE (
+            id BIGINT,
+            content TEXT,
+            metadata JSONB,
+            similarity FLOAT
+          )
+          LANGUAGE plpgsql
+          AS $$
+          BEGIN
+            RETURN QUERY
+            SELECT
+              kb.id,
+              kb.content,
+              kb.metadata,
+              1 - (kb.embedding <=> query_embedding) AS similarity
+            FROM knowledge_base kb
+            WHERE 1 - (kb.embedding <=> query_embedding) > match_threshold
+            ORDER BY kb.embedding <=> query_embedding
+            LIMIT match_count;
+          END;
+          $$;
+        `,
+      });
+      console.log("✓ knowledge_base table + search_knowledge_base RPC ready");
+    } catch (knowledgeInitError) {
+      console.warn("knowledge_base init skipped:", knowledgeInitError.message);
+    }
+
+    // Ticket SLA history table (timeline snapshots per ticket)
+    try {
+      await supabase.rpc("execute_sql", {
+        sql: `
+          CREATE TABLE IF NOT EXISTS ticket_sla_history (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            ticket_id INTEGER NOT NULL,
+            status TEXT,
+            opened_at TIMESTAMPTZ,
+            closed_at TIMESTAMPTZ,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_ticket_sla_history_ticket_id
+            ON ticket_sla_history(ticket_id, closed_at DESC);
+        `,
+      });
+      console.log("✓ ticket_sla_history table ready");
+    } catch (slaInitError) {
+      console.warn("ticket_sla_history init skipped:", slaInitError.message);
+    }
+
+    // RLS policies for all tables
+    // Backend uses service_role key which bypasses RLS entirely.
+    // Policies here only govern frontend (anon key + user JWT).
+    try {
+      await supabase.rpc("execute_sql", {
+        sql: `
+          -- Tickets: users see own, admins see all; only admins can update
+          ALTER TABLE "Tickets" ENABLE ROW LEVEL SECURITY;
+
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'Tickets' AND policyname = 'tickets_select') THEN
+              CREATE POLICY tickets_select ON "Tickets" FOR SELECT USING (
+                created_by = auth.uid() OR (auth.jwt() ->> 'app_role') = 'admin'
+              );
+            END IF;
+
+            IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'Tickets' AND policyname = 'tickets_insert') THEN
+              CREATE POLICY tickets_insert ON "Tickets" FOR INSERT WITH CHECK (
+                auth.uid() IS NOT NULL
+              );
+            END IF;
+
+            IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'Tickets' AND policyname = 'tickets_update') THEN
+              CREATE POLICY tickets_update ON "Tickets" FOR UPDATE USING (
+                (auth.jwt() ->> 'app_role') = 'admin'
+              );
+            END IF;
+          END
+          $$;
+
+          -- auth_users: users see own row, admins see all; no frontend mutations
+          ALTER TABLE auth_users ENABLE ROW LEVEL SECURITY;
+
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'auth_users' AND policyname = 'auth_users_select') THEN
+              CREATE POLICY auth_users_select ON auth_users FOR SELECT USING (
+                id = auth.uid() OR (auth.jwt() ->> 'app_role') = 'admin'
+              );
+            END IF;
+          END
+          $$;
+
+          -- admin_users: admins see all; no frontend mutations
+          ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'admin_users' AND policyname = 'admin_users_select') THEN
+              CREATE POLICY admin_users_select ON admin_users FOR SELECT USING (
+                (auth.jwt() ->> 'app_role') = 'admin'
+              );
+            END IF;
+          END
+          $$;
+
+          -- ticket_sla_history: users see own ticket history, admins see all; no frontend mutations
+          ALTER TABLE ticket_sla_history ENABLE ROW LEVEL SECURITY;
+
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'ticket_sla_history' AND policyname = 'ticket_sla_history_select') THEN
+              CREATE POLICY ticket_sla_history_select ON ticket_sla_history FOR SELECT USING (
+                (auth.jwt() ->> 'app_role') = 'admin'
+                OR EXISTS (
+                  SELECT 1 FROM "Tickets" t WHERE t.id = ticket_id AND t.created_by = auth.uid()
+                )
+              );
+            END IF;
+          END
+          $$;
+
+          -- Backend-only tables: enable RLS, no policies = anon/user blocked, service_role bypasses
+          ALTER TABLE knowledge_base ENABLE ROW LEVEL SECURITY;
+          ALTER TABLE chatbot_sessions ENABLE ROW LEVEL SECURITY;
+          ALTER TABLE chatbot_messages ENABLE ROW LEVEL SECURITY;
+          ALTER TABLE chatbot_account_limits ENABLE ROW LEVEL SECURITY;
+        `,
+      });
+      console.log("✓ RLS policies applied");
+    } catch (rlsError) {
+      console.warn("RLS policy setup skipped:", rlsError.message);
+    }
+
     console.log("✓ Database initialized");
   } catch (error) {
     console.error("Database initialization error:", error.message);
