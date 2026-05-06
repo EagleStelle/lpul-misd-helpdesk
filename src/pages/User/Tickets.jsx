@@ -54,7 +54,9 @@ function Tickets() {
   // Set of ticket IDs where user already answered — prevents re-queuing answered tickets
   const getFeedbackGiven = () => {
     try {
-      return new Set(JSON.parse(localStorage.getItem(feedbackGivenKey) || "[]"));
+      return new Set(
+        JSON.parse(localStorage.getItem(feedbackGivenKey) || "[]"),
+      );
     } catch {
       return new Set();
     }
@@ -74,7 +76,9 @@ function Tickets() {
   const [feedbackQueue, setFeedbackQueue] = useState(() => {
     try {
       const given = getFeedbackGiven();
-      const saved = JSON.parse(localStorage.getItem(feedbackStorageKey) || "[]");
+      const saved = JSON.parse(
+        localStorage.getItem(feedbackStorageKey) || "[]",
+      );
       return saved.filter((t) => !given.has(t.id));
     } catch {
       return [];
@@ -322,7 +326,9 @@ function Tickets() {
   useEffect(() => {
     if (!userId) return;
     const checkMissedCloses = async () => {
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const sevenDaysAgo = new Date(
+        Date.now() - 7 * 24 * 60 * 60 * 1000,
+      ).toISOString();
       const { data } = await realtimeSupabase
         .from("Tickets")
         .select("id, Summary, Description, Category, closed_at")
@@ -375,7 +381,7 @@ function Tickets() {
     <div className="h-full overflow-hidden bg-gray-50 font-poppins flex flex-col p-4 md:p-6">
       <div className="w-full max-w-330 mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border-t-[6px] border-lpu-maroon flex-1 min-h-0 flex flex-col">
         <div className="p-6 md:p-8 flex-1 min-h-0 flex flex-col">
-          <h1 className="text-2xl md:text-3xl font-black text-lpu-maroon mb-4 tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-black text-lpu-maroon mb-4 tracking-tight text-center">
             Ticket Dashboard
           </h1>
 
@@ -413,7 +419,9 @@ function Tickets() {
         <FeedbackModal
           key={feedbackQueue[0].id}
           ticket={feedbackQueue[0]}
-          onSubmit={(satisfied) => handleFeedbackSubmit(feedbackQueue[0].id, satisfied)}
+          onSubmit={(satisfied) =>
+            handleFeedbackSubmit(feedbackQueue[0].id, satisfied)
+          }
           onClose={handleFeedbackClose}
         />
       )}

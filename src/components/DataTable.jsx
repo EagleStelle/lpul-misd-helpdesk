@@ -14,7 +14,7 @@ const BTN_STYLES = {
   primary:
     "bg-lpu-maroon border-lpu-maroon text-white hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold",
   secondary:
-    "border-lpu-maroon text-lpu-maroon hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold",
+    "border-lpu-maroon text-lpu-maroon hover:bg-lpu-maroon hover:text-white hover:border-lpu-maroon dark:border-lpu-gold dark:text-lpu-gold dark:hover:bg-lpu-maroon dark:hover:text-white dark:hover:border-lpu-maroon",
 };
 
 export function TableButton({
@@ -43,15 +43,23 @@ export function TableButton({
 }
 
 const BADGE_STYLES = {
-  default: "bg-gray-100 text-gray-700 border-gray-200",
-  success: "bg-green-100 text-green-800 border-green-200",
-  warning: "bg-orange-100 text-orange-700 border-orange-200",
-  danger: "bg-red-50 text-red-700 border-red-200",
-  info: "bg-lpu-maroon/10 text-lpu-maroon border-lpu-maroon/20",
-  "status-ongoing": "bg-green-800/10 text-green-800 border-green-800/30",
-  "status-unassigned": "bg-lpu-gold/10 text-yellow-700 border-lpu-gold/50",
-  "status-overdue": "bg-lpu-red/10 text-lpu-red border-lpu-red/40",
-  "status-complete": "bg-blue-50 text-blue-700 border-blue-200",
+  default:
+    "bg-gray-100 text-gray-700 border-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700",
+  success:
+    "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/25 dark:text-green-400 dark:border-green-700/40",
+  warning:
+    "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-700/30",
+  danger:
+    "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-700/30",
+  info: "bg-lpu-maroon/10 text-lpu-maroon border-lpu-maroon/20 dark:bg-lpu-maroon/20 dark:text-lpu-gold dark:border-lpu-maroon/30",
+  "status-ongoing":
+    "bg-green-800/10 text-green-800 border-green-800/30 dark:bg-green-900/20 dark:text-green-400 dark:border-green-700/30",
+  "status-unassigned":
+    "bg-lpu-gold/10 text-yellow-700 border-lpu-gold/50 dark:bg-lpu-gold/10 dark:text-yellow-400 dark:border-lpu-gold/30",
+  "status-overdue":
+    "bg-lpu-red/10 text-lpu-red border-lpu-red/40 dark:bg-lpu-red/15 dark:text-red-400 dark:border-lpu-red/30",
+  "status-complete":
+    "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-700/30",
 };
 
 export function TableBadge({
@@ -84,7 +92,7 @@ export function TableSelect({
       onClick={(e) => e.stopPropagation()} // PREVENTS ROW CLICK BUG
     >
       <select
-        className="w-full h-full appearance-none pl-3 pr-8 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-700 outline-none transition-all duration-200 focus:ring-2 focus:ring-lpu-gold focus:border-lpu-gold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full h-full appearance-none pl-3 pr-8 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm font-bold text-gray-700 dark:text-zinc-100 outline-none transition-all duration-200 focus:ring-2 focus:ring-lpu-gold focus:border-lpu-gold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         value={value || ""}
         disabled={disabled}
         onChange={onChange}
@@ -125,8 +133,8 @@ export function DataTable({
 
   if (data.length === 0) {
     return (
-      <div className="w-full rounded-xl border border-gray-100 bg-white shadow-sm">
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400 bg-gray-50/50 rounded-xl">
+      <div className="datatable-root w-full rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400 dark:text-zinc-500 bg-gray-50/50 dark:bg-zinc-900 rounded-xl">
           <p className="text-xl font-semibold">{emptyMessage}</p>
           {emptySubMessage && <p className="text-sm mt-1">{emptySubMessage}</p>}
         </div>
@@ -154,14 +162,14 @@ export function DataTable({
     switch (col.variant) {
       case "badge":
         return (
-          <span className="h-9 inline-flex items-center justify-center px-3 bg-gray-100 group-hover:bg-lpu-maroon group-hover:text-white rounded-lg text-sm font-bold transition-colors whitespace-nowrap border border-transparent group-hover:border-lpu-maroon">
+          <span className="h-9 inline-flex items-center justify-center px-3 bg-gray-100 dark:bg-zinc-800 dark:text-zinc-200 group-hover:bg-lpu-maroon group-hover:text-white dark:group-hover:bg-lpu-gold dark:group-hover:text-lpu-maroon rounded-lg text-sm font-bold transition-colors whitespace-nowrap border border-transparent group-hover:border-lpu-maroon dark:group-hover:border-lpu-gold">
             #{value}
           </span>
         );
       case "title":
         return (
           <div
-            className="text-sm font-bold text-gray-800 line-clamp-1"
+            className="text-sm font-bold text-gray-800 dark:text-zinc-100 line-clamp-1"
             title={value}
           >
             {value || "-"}
@@ -170,7 +178,7 @@ export function DataTable({
       case "subtitle":
         return (
           <div
-            className="text-sm text-gray-500 line-clamp-1 italic"
+            className="text-sm text-gray-500 dark:text-zinc-400 line-clamp-1 italic"
             title={value}
           >
             {value || "-"}
@@ -178,19 +186,19 @@ export function DataTable({
         );
       case "highlight":
         return (
-          <span className="text-sm font-bold text-lpu-maroon tracking-tighter line-clamp-1">
+          <span className="text-sm font-bold text-lpu-maroon dark:text-lpu-gold tracking-tighter line-clamp-1">
             {value || "-"}
           </span>
         );
       case "date":
         return (
-          <span className="text-sm text-gray-500 whitespace-nowrap">
+          <span className="text-sm text-gray-500 dark:text-zinc-400 whitespace-nowrap">
             {value ? new Date(value).toLocaleDateString() : "-"}
           </span>
         );
       case "status":
         return value ? (
-          <span className="text-sm text-lpu-maroon font-bold whitespace-nowrap">
+          <span className="text-sm text-lpu-maroon dark:text-lpu-gold font-bold whitespace-nowrap">
             {new Date(value).toLocaleDateString()}
           </span>
         ) : (
@@ -198,14 +206,14 @@ export function DataTable({
         );
       case "statusText":
         return (
-          <span className="text-sm font-bold text-gray-700 whitespace-nowrap">
+          <span className="text-sm font-bold text-gray-700 dark:text-zinc-200 whitespace-nowrap">
             {value || "Open"}
           </span>
         );
       case "select":
         if (!col.options || col.options.length === 0) {
           return (
-            <span className="text-sm text-gray-500 whitespace-nowrap">
+            <span className="text-sm text-gray-500 dark:text-zinc-400 whitespace-nowrap">
               {col.fallbackText ? col.fallbackText(row) : value || "—"}
             </span>
           );
@@ -276,7 +284,7 @@ export function DataTable({
         );
       default:
         return (
-          <span className="text-sm text-gray-700 line-clamp-1">
+          <span className="text-sm text-gray-700 dark:text-zinc-200 line-clamp-1">
             {value || "-"}
           </span>
         );
@@ -304,7 +312,7 @@ export function DataTable({
   };
 
   return (
-    <div className="w-full h-full rounded-xl border border-gray-100 bg-white shadow-sm overflow-x-auto md:overflow-x-hidden flex flex-col">
+    <div className="datatable-root w-full h-full rounded-xl border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm overflow-x-auto md:overflow-x-hidden flex flex-col">
       <div className="min-w-325 md:min-w-full flex-1 min-h-0 flex flex-col">
         {/* HEADER TABLE */}
         <div className="w-full bg-lpu-maroon text-white rounded-t-xl pr-1 md:pr-2">
@@ -339,15 +347,17 @@ export function DataTable({
                 <col key={index} className={getColumnWidthClass(col)} />
               ))}
             </colgroup>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
               {data.map((row, rowIndex) => (
                 <tr
                   key={row.id || rowIndex}
                   onClick={() => onRowClick && onRowClick(row)}
                   tabIndex={onRowClick ? 0 : -1}
                   style={{ animationDelay: `${rowIndex * 30}ms` }}
-                  className={`group transition-colors duration-200 animate-in fade-in slide-in-from-left-4 hover:bg-lpu-gold/10 ${
-                    rowIndex % 2 === 0 ? "bg-white" : "bg-gray-50"
+                  className={`group transition-colors duration-200 animate-in fade-in slide-in-from-left-4 hover:bg-lpu-gold/10 dark:hover:bg-lpu-maroon/20 ${
+                    rowIndex % 2 === 0
+                      ? "bg-white dark:bg-zinc-900"
+                      : "bg-gray-50 dark:bg-[#1f1f23]"
                   } ${onRowClick ? "cursor-pointer" : ""}`}
                 >
                   {columns.map((col, colIndex) => (
@@ -391,12 +401,20 @@ function PaginationFooter({
   onNextPage,
 }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-white rounded-b-xl">
-      <span className="text-sm text-gray-500 font-medium">
-        Page <span className="font-bold text-gray-800">{page + 1}</span> of{" "}
-        <span className="font-bold text-gray-800">{pageCount}</span>
+    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-b-xl">
+      <span className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
+        Page{" "}
+        <span className="font-bold text-gray-800 dark:text-zinc-100">
+          {page + 1}
+        </span>{" "}
+        of{" "}
+        <span className="font-bold text-gray-800 dark:text-zinc-100">
+          {pageCount}
+        </span>
         {totalCount !== undefined && (
-          <span className="ml-1 text-gray-400">({totalCount} total)</span>
+          <span className="ml-1 text-gray-400 dark:text-zinc-500">
+            ({totalCount} total)
+          </span>
         )}
       </span>
       <div className="flex gap-2">

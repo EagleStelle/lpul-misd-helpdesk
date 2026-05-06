@@ -258,7 +258,7 @@ export default function AdminKnowledge() {
   );
 
   return (
-    <div className="w-full h-full flex flex-col flex-1 overflow-hidden bg-gray-50/50">
+    <div className="w-full h-full flex flex-col flex-1 overflow-hidden dark:text-gray-100">
       {/* Retained max-width, flex-1 ensures it fills vertical space */}
       <section className="w-full max-w-330 mx-auto flex flex-col flex-1 h-full px-4 py-4 md:px-6 md:py-6 font-poppins min-h-0">
         {/* Search bar */}
@@ -270,7 +270,7 @@ export default function AdminKnowledge() {
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-700 p-4 rounded-xl font-semibold text-center border border-red-100 mb-4 shrink-0">
+          <div className="bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 p-4 rounded-xl font-semibold text-center border border-red-100 dark:border-red-900/30 mb-4 shrink-0">
             {error}
           </div>
         )}
@@ -278,9 +278,11 @@ export default function AdminKnowledge() {
         {/* Main Grid Wrapper: We apply overflow-y-auto HERE so mobile can scroll normally */}
         <div className="flex-1 min-h-0 w-full overflow-y-auto pr-1 flex flex-col">
           {loading ? (
-            <p className="text-gray-500 text-sm">Loading...</p>
+            <p className="text-gray-500 dark:text-zinc-400 text-sm">
+              Loading...
+            </p>
           ) : entries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full w-full text-gray-400">
+            <div className="flex flex-col items-center justify-center h-full w-full text-gray-400 dark:text-zinc-500">
               <BookOpen size={40} className="mb-2 opacity-50" />
               <p>No knowledge entries found.</p>
             </div>
@@ -292,28 +294,28 @@ export default function AdminKnowledge() {
                   <div
                     key={entry.id}
                     // min-h-[140px] guarantees the cards will never squish down to tiny slivers on mobile
-                    className="flex flex-col bg-white border border-gray-200 rounded-xl p-4 shadow-sm w-full hover:shadow-md transition-shadow min-h-35 lg:min-h-0 h-full"
+                    className="flex flex-col bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 shadow-sm w-full hover:shadow-md transition-shadow min-h-35 lg:min-h-0 h-full"
                   >
                     {entry.metadata?.title && (
-                      <p className="font-bold text-lpu-maroon text-sm tracking-tight mb-2 leading-snug shrink-0">
+                      <p className="font-bold text-lpu-maroon dark:text-lpu-gold text-sm tracking-tight mb-2 leading-snug shrink-0">
                         {entry.metadata.title}
                       </p>
                     )}
 
                     {/* Strictly Truncated Text: No scroll, strictly respects container bounds */}
-                    <p className="flex-1 min-h-0 text-xs text-gray-600 whitespace-pre-wrap text-justify leading-relaxed overflow-hidden text-ellipsis">
+                    <p className="flex-1 min-h-0 text-xs text-gray-600 dark:text-zinc-400 whitespace-pre-wrap text-justify leading-relaxed overflow-hidden text-ellipsis">
                       {entry.content.length > 250
                         ? entry.content.slice(0, 250) + "…"
                         : entry.content}
                     </p>
 
-                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 shrink-0">
-                      <span className="bg-lpu-maroon/10 text-lpu-maroon text-xs font-bold px-2 py-1 rounded-md border border-lpu-maroon/20 tabular-nums">
+                    <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100 dark:border-zinc-800 shrink-0">
+                      <span className="bg-lpu-maroon/10 dark:bg-lpu-maroon/20 text-lpu-maroon dark:text-lpu-gold text-xs font-bold px-2 py-1 rounded-md border border-lpu-maroon/20 dark:border-lpu-maroon/30 tabular-nums">
                         ID: {entry.id}
                       </span>
                       <div className="flex gap-1.5">
                         <button
-                          className="flex items-center justify-center w-7 h-7 bg-white text-lpu-maroon border border-lpu-maroon rounded-md hover:bg-lpu-maroon hover:text-white transition-all duration-200 cursor-pointer shadow-sm"
+                          className="flex items-center justify-center w-7 h-7 text-lpu-maroon border border-lpu-maroon rounded-md hover:bg-lpu-maroon hover:text-white hover:border-lpu-maroon dark:text-lpu-gold dark:border-lpu-gold dark:hover:bg-lpu-maroon dark:hover:text-white dark:hover:border-lpu-maroon transition-all duration-200 cursor-pointer shadow-sm"
                           onClick={() => openEdit(entry)}
                           title="Edit entry"
                         >
@@ -338,18 +340,26 @@ export default function AdminKnowledge() {
 
         {/* Pagination */}
         {pageCount > 1 && (
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 shrink-0">
-            <span className="text-sm text-gray-500 font-medium">
-              Page <span className="font-bold text-gray-800">{page + 1}</span>{" "}
-              of <span className="font-bold text-gray-800">{pageCount}</span>
-              <span className="ml-1 text-gray-400">({total} total)</span>
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-zinc-800 shrink-0">
+            <span className="text-sm text-gray-500 dark:text-zinc-400 font-medium">
+              Page{" "}
+              <span className="font-bold text-gray-800 dark:text-zinc-100">
+                {page + 1}
+              </span>{" "}
+              of{" "}
+              <span className="font-bold text-gray-800 dark:text-zinc-100">
+                {pageCount}
+              </span>
+              <span className="ml-1 text-gray-400 dark:text-zinc-500">
+                ({total} total)
+              </span>
             </span>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="h-9 inline-flex items-center justify-center px-3 text-sm font-bold rounded-lg border transition-all whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-lpu-gold focus:ring-offset-1 border-lpu-maroon text-lpu-maroon hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-9 inline-flex items-center justify-center px-3 text-sm font-bold rounded-lg border transition-all whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-lpu-gold focus:ring-offset-1 border-lpu-maroon text-lpu-maroon hover:bg-lpu-maroon hover:text-white hover:border-lpu-maroon dark:border-lpu-gold dark:text-lpu-gold dark:hover:bg-lpu-maroon dark:hover:text-white dark:hover:border-lpu-maroon cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft size={16} className="mr-1" /> Prev
               </button>
@@ -357,7 +367,7 @@ export default function AdminKnowledge() {
                 type="button"
                 onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
                 disabled={page >= pageCount - 1}
-                className="h-9 inline-flex items-center justify-center px-3 text-sm font-bold rounded-lg border transition-all whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-lpu-gold focus:ring-offset-1 border-lpu-maroon text-lpu-maroon hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-9 inline-flex items-center justify-center px-3 text-sm font-bold rounded-lg border transition-all whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-lpu-gold focus:ring-offset-1 border-lpu-maroon text-lpu-maroon hover:bg-lpu-maroon hover:text-white hover:border-lpu-maroon dark:border-lpu-gold dark:text-lpu-gold dark:hover:bg-lpu-maroon dark:hover:text-white dark:hover:border-lpu-maroon cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next <ChevronRight size={16} className="ml-1" />
               </button>
@@ -365,7 +375,6 @@ export default function AdminKnowledge() {
           </div>
         )}
       </section>
-
       {showAddModal && (
         <KnowledgeEntryModal
           title="Add Knowledge Entry"
@@ -385,7 +394,6 @@ export default function AdminKnowledge() {
           />
         </KnowledgeEntryModal>
       )}
-
       {editingEntry && (
         <KnowledgeEntryModal
           title="Edit Knowledge Entry"

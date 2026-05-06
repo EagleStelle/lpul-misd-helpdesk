@@ -9,11 +9,10 @@ import {
   Settings,
   User,
   ChevronDown,
-  Moon,
   LogOut,
 } from "lucide-react";
 import lpuLogo from "../assets/lpul-logo.png";
-import AdminAccountSettingsModal from "../pages/Admin/components/AdminAccountSettingsModal";
+import { SettingsModal } from "./Modal";
 import { useNavbarActionsContext } from "../context/NavbarActionsContext";
 
 export default function AdminNavbar() {
@@ -31,9 +30,7 @@ export default function AdminNavbar() {
   );
 
   useEffect(() => {
-    const root = document.querySelector(".admin-shell");
-    if (!root) return;
-    root.classList.toggle("admin-dark", darkMode);
+    document.documentElement.classList.toggle("admin-dark", darkMode);
     localStorage.setItem("adminDarkMode", String(darkMode));
   }, [darkMode]);
 
@@ -108,18 +105,7 @@ export default function AdminNavbar() {
             }}
             className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-lpu-maroon transition-colors w-full text-left"
           >
-            <User size={16} /> <span>My account</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setDarkMode((v) => !v);
-              setMenuOpen(false);
-            }}
-            className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-lpu-maroon transition-colors w-full text-left"
-          >
-            <Moon size={16} /> <span>Dark Mode</span>
+            <Settings size={16} /> <span>Settings</span>
           </button>
 
           <div className="h-px bg-gray-100 my-1 w-full"></div>
@@ -236,9 +222,11 @@ export default function AdminNavbar() {
         )}
       </header>
 
-      <AdminAccountSettingsModal
+      <SettingsModal
         open={accountModalOpen}
         onClose={() => setAccountModalOpen(false)}
+        darkMode={darkMode}
+        onToggleDark={() => setDarkMode((v) => !v)}
       />
     </>
   );

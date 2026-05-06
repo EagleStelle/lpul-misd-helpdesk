@@ -3,11 +3,11 @@ import { Search, ChevronDown } from "lucide-react";
 
 export const FilterSelect = ({ value, onChange, options }) => {
   return (
-    <div className="relative w-full md:flex-1 h-10 group">
+    <div className="filter-select-wrap relative w-full md:flex-1 h-10 group">
       <select
         value={value}
         onChange={onChange}
-        className="w-full h-full appearance-none pl-3 pr-8 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-700 outline-none transition-all duration-200 focus:ring-2 focus:ring-lpu-gold focus:border-lpu-gold cursor-pointer"
+        className="w-full h-full appearance-none pl-3 pr-8 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg text-sm font-bold text-gray-700 dark:text-zinc-100 outline-none transition-all duration-200 focus:ring-2 focus:ring-lpu-gold focus:border-lpu-gold cursor-pointer"
       >
         {options.map((option) => (
           <option key={option} value={option}>
@@ -35,7 +35,7 @@ export const SearchInput = ({
   };
 
   return (
-    <div className="w-full md:flex-1 h-10 flex items-center border border-gray-200 rounded-lg overflow-hidden transition-all duration-200 focus-within:ring-2 focus-within:ring-lpu-gold focus-within:border-lpu-gold bg-white">
+    <div className="search-input-wrap w-full md:flex-1 h-10 flex items-center border border-gray-200 dark:border-zinc-800 rounded-lg overflow-hidden transition-all duration-200 focus-within:ring-2 focus-within:ring-lpu-gold focus-within:border-lpu-gold bg-white dark:bg-zinc-900">
       <Search
         size={16}
         className="shrink-0 ml-3 text-gray-400 stroke-[2.2px]"
@@ -49,7 +49,7 @@ export const SearchInput = ({
           if (e.target.value === "") onSearch("");
         }}
         onKeyDown={handleKeyDown}
-        className="flex-1 min-w-0 w-full h-full px-2.5 bg-transparent text-sm font-medium outline-none text-ellipsis"
+        className="flex-1 min-w-0 w-full h-full px-2.5 bg-transparent text-sm font-medium outline-none text-ellipsis text-gray-800 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500"
       />
       <button
         type="button"

@@ -45,12 +45,12 @@ function getPriorityPillClass(priority) {
     .trim()
     .toLowerCase();
   if (val === "high")
-    return "bg-lpu-red/10 border border-lpu-red/40 text-lpu-red";
+    return "bg-lpu-red/10 border border-lpu-red/40 text-lpu-red dark:bg-lpu-red/15 dark:border-lpu-red/30 dark:text-red-400";
   if (val === "medium")
-    return "bg-lpu-gold/10 border border-lpu-gold/50 text-yellow-700";
+    return "bg-lpu-gold/10 border border-lpu-gold/50 text-yellow-700 dark:bg-lpu-gold/10 dark:border-lpu-gold/30 dark:text-yellow-400";
   if (val === "low")
-    return "bg-green-800/10 border border-green-800/30 text-green-800";
-  return "bg-gray-50 border border-gray-200 text-gray-500";
+    return "bg-green-800/10 border border-green-800/30 text-green-800 dark:bg-green-900/20 dark:border-green-700/30 dark:text-green-400";
+  return "bg-gray-50 border border-gray-200 text-gray-500 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-400";
 }
 
 const PRIORITY_OPTIONS = [
@@ -101,7 +101,7 @@ function AssigneeCell({
       {assigned.map((id) => (
         <div
           key={id}
-          className="flex items-center gap-1 h-7 pl-2.5 pr-1.5 bg-lpu-maroon/10 border border-lpu-maroon/20 rounded-lg text-xs font-bold text-lpu-maroon whitespace-nowrap max-w-full"
+          className="flex items-center gap-1 h-7 pl-2.5 pr-1.5 bg-lpu-maroon/10 border border-lpu-maroon/20 rounded-lg text-xs font-bold text-lpu-maroon dark:bg-lpu-maroon/20 dark:border-lpu-maroon/35 dark:text-lpu-gold whitespace-nowrap max-w-full"
         >
           <span className="truncate flex-1 min-w-0">
             {adminNameMap[id] || id}
@@ -127,7 +127,7 @@ function AssigneeCell({
             value={adding}
             onChange={(e) => handleSelect(e.target.value)}
             onClick={(e) => e.stopPropagation()}
-            className="w-full h-full appearance-none pl-2.5 pr-6 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-500 outline-none transition-all duration-200 focus:ring-2 focus:ring-lpu-gold focus:border-lpu-gold cursor-pointer"
+            className="w-full h-full appearance-none pl-2.5 pr-6 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-xs font-bold text-gray-500 dark:text-zinc-300 outline-none transition-all duration-200 focus:ring-2 focus:ring-lpu-gold focus:border-lpu-gold cursor-pointer"
           >
             <option value="" disabled>
               Add assignee…
@@ -145,7 +145,7 @@ function AssigneeCell({
         </div>
       )}
       {assigned.length === 0 && available.length === 0 && (
-        <span className="text-sm text-gray-400">—</span>
+        <span className="text-sm text-gray-400 dark:text-zinc-500">—</span>
       )}
     </div>
   );
@@ -513,7 +513,7 @@ export default function AdminTickets() {
   if (!isAdmin) return <Navigate to="/Tickets" replace />;
 
   return (
-    <section className="w-full max-w-330 mx-auto px-6 py-4 md:py-6 font-[Poppins,Segoe_UI,Arial,sans-serif] h-full overflow-hidden flex flex-col">
+    <section className="w-full max-w-330 mx-auto px-6 py-4 md:py-6 font-[Poppins,Segoe_UI,Arial,sans-serif] h-full overflow-hidden flex flex-col dark:text-gray-100">
       <div className="flex flex-col md:flex-row gap-4 mb-4">
         <FilterSelect
           value={filter}
@@ -527,11 +527,11 @@ export default function AdminTickets() {
       </div>
 
       {error ? (
-        <div className="bg-red-50 text-lpu-red p-4 rounded-xl font-semibold text-center border border-red-100">
+        <div className="bg-red-50 dark:bg-red-950/20 text-lpu-red dark:text-red-400 p-4 rounded-xl font-semibold text-center border border-red-100 dark:border-red-900/30">
           {error}
         </div>
       ) : (
-        <div className="w-full flex-1 min-h-0 rounded-xl border border-gray-100 shadow-sm bg-white flex flex-col">
+        <div className="w-full flex-1 min-h-0 rounded-xl border border-gray-100 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900 flex flex-col">
           <DataTable
             columns={adminColumns}
             data={tickets}

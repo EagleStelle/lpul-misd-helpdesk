@@ -255,7 +255,7 @@ export default function AdminManage() {
   ];
 
   return (
-    <div className="md:flex-1 md:overflow-y-auto">
+    <div className="md:flex-1 md:overflow-y-auto dark:text-gray-100">
       <section className="w-full max-w-330 mx-auto px-6 py-4 md:py-6 font-poppins h-full overflow-hidden flex flex-col">
         <div className="mb-4">
           <SearchInput
@@ -265,11 +265,11 @@ export default function AdminManage() {
         </div>
 
         {error ? (
-          <div className="bg-red-50 text-red-700 p-4 rounded-xl font-semibold text-center border border-red-100">
+          <div className="bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 p-4 rounded-xl font-semibold text-center border border-red-100 dark:border-red-900/30">
             {error}
           </div>
         ) : (
-          <div className="w-full rounded-xl border border-gray-100 shadow-sm bg-white">
+          <div className="w-full rounded-xl border border-gray-100 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-900">
             <DataTable
               columns={columns}
               data={pagedAdmins}
@@ -322,7 +322,7 @@ function ModalShell({ onClose, title, children }) {
       role="dialog"
     >
       <div
-        className="bg-white rounded-[18px] w-full max-w-105 shadow-[0_18px_48px_rgba(15,23,42,0.18)] overflow-hidden font-poppins"
+        className="bg-white dark:bg-zinc-900 rounded-[18px] w-full max-w-105 shadow-[0_18px_48px_rgba(15,23,42,0.18)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.5)] overflow-hidden font-poppins"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 font-bold text-sm bg-[#980001] text-white">
@@ -342,8 +342,8 @@ function ModalShell({ onClose, title, children }) {
 }
 
 const fieldCls =
-  "px-3 py-2.5 border border-gray-200 rounded-full text-sm outline-none bg-gray-50 focus:border-lpu-maroon focus:ring-2 focus:ring-lpu-maroon/20 transition-all";
-const labelCls = "flex flex-col gap-1.5 text-xs font-semibold text-gray-800";
+  "px-3 py-2.5 border border-gray-200 dark:border-zinc-700 rounded-full text-sm outline-none bg-gray-50 dark:bg-zinc-800 text-gray-800 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:border-lpu-maroon focus:ring-2 focus:ring-lpu-maroon/20 transition-all";
+const labelCls = "flex flex-col gap-1.5 text-xs font-semibold text-gray-800 dark:text-zinc-200";
 
 function AddAdminModal({ onClose, onCreated }) {
   const [form, setForm] = useState({
@@ -445,7 +445,7 @@ function AddAdminModal({ onClose, onCreated }) {
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-5 py-2.5 rounded-full text-sm font-semibold border border-gray-200 bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-55 disabled:cursor-not-allowed transition-colors"
+            className="px-5 py-2.5 rounded-full text-sm font-semibold border border-gray-200 dark:border-zinc-700 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-700 disabled:opacity-55 disabled:cursor-not-allowed transition-colors"
           >
             Cancel
           </button>
