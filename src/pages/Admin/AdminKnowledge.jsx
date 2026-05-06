@@ -18,7 +18,7 @@ import {
   SecondaryButton,
   FloatingTextarea,
 } from "../../components/FormFields";
-import { KnowledgeEntryModal } from "../../components/Modal";
+import { FormModal } from "../../components/Modal";
 
 const PAGE_SIZE = 10;
 
@@ -376,7 +376,7 @@ export default function AdminKnowledge() {
         )}
       </section>
       {showAddModal && (
-        <KnowledgeEntryModal
+        <FormModal
           title="Add Knowledge Entry"
           icon={Plus}
           onClose={() => setShowAddModal(false)}
@@ -392,10 +392,10 @@ export default function AdminKnowledge() {
             onCancel={() => setShowAddModal(false)}
             saveLabel="Save Entry"
           />
-        </KnowledgeEntryModal>
+        </FormModal>
       )}
       {editingEntry && (
-        <KnowledgeEntryModal
+        <FormModal
           title="Edit Knowledge Entry"
           icon={Pencil}
           onClose={() => setEditingEntry(null)}
@@ -411,7 +411,7 @@ export default function AdminKnowledge() {
             onCancel={() => setEditingEntry(null)}
             saveLabel="Update Entry"
           />
-        </KnowledgeEntryModal>
+        </FormModal>
       )}
     </div>
   );

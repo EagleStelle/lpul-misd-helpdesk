@@ -157,14 +157,22 @@ export function FeedbackModal({ ticket, onSubmit, onClose }) {
 }
 
 /**
- * KnowledgeEntryModal — Add / Edit knowledge entry modal. Composed from Modal.
+ * FormModal — reusable headered modal shell. Composed from Modal.
  *
  * Props:
- *   title    – header title string
- *   icon     – Lucide icon component
- *   children – form body content
+ *   title     – header title string
+ *   icon      – Lucide icon component
+ *   onClose   – optional close handler (adds close button)
+ *   className – extra classes on the inner card
+ *   children  – form body content
  */
-export function KnowledgeEntryModal({ title, icon: Icon, onClose, children }) {
+export function FormModal({
+  title,
+  icon: Icon,
+  onClose,
+  className = "",
+  children,
+}) {
   const header = (
     <>
       <div className="flex items-center gap-2.5 min-w-0">
@@ -173,11 +181,21 @@ export function KnowledgeEntryModal({ title, icon: Icon, onClose, children }) {
           {title}
         </h2>
       </div>
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1.5 rounded-lg text-gray-400 hover:text-lpu-maroon hover:bg-gray-100 transition-colors"
+          aria-label="Close"
+        >
+          <X size={18} />
+        </button>
+      )}
     </>
   );
 
   return (
-    <Modal header={header} className="max-w-lg">
+    <Modal header={header} className={`max-w-lg ${className}`.trim()}>
       {children}
     </Modal>
   );
@@ -269,7 +287,9 @@ function ProfileSection({ loading, loadErr, profile, setProfile, onClose }) {
 
   if (loading)
     return (
-      <p className="text-sm text-gray-400 dark:text-zinc-500 text-center py-8">Loading…</p>
+      <p className="text-sm text-gray-400 dark:text-zinc-500 text-center py-8">
+        Loading…
+      </p>
     );
 
   return (
@@ -420,7 +440,9 @@ function AppearanceSection({ darkMode, onToggleDark }) {
           ) : (
             <Sun size={18} className="text-lpu-maroon" />
           )}
-          <p className="text-sm font-bold text-gray-800 dark:text-zinc-100">Dark Mode</p>
+          <p className="text-sm font-bold text-gray-800 dark:text-zinc-100">
+            Dark Mode
+          </p>
         </div>
         <label className="relative inline-flex items-center cursor-pointer">
           <input
@@ -480,7 +502,8 @@ export function SettingsModal({ open, onClose, darkMode, onToggleDark }) {
           email: json.user.email || "",
         });
       } catch (e) {
-        if (!cancelled) setProfileLoadErr(e.message || "Could not load profile");
+        if (!cancelled)
+          setProfileLoadErr(e.message || "Could not load profile");
       } finally {
         if (!cancelled) setProfileLoading(false);
       }

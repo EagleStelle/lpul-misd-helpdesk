@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { jwtDecode } from "jwt-decode";
-import { UserPlus, X } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { getApiBaseUrl } from "../../utils/apiBaseUrl";
 import { ADMIN_LEVEL_LABELS } from "../../utils/adminLevels";
 import {
@@ -14,6 +14,13 @@ import {
   TableBadge,
   TableSelect,
 } from "../../components/DataTable";
+import { FormModal } from "../../components/Modal";
+import {
+  FloatingInput,
+  FloatingSelect,
+  PrimaryButton,
+  SecondaryButton,
+} from "../../components/FormFields";
 
 const PAGE_SIZE = 10;
 
@@ -314,37 +321,6 @@ export default function AdminManage() {
   );
 }
 
-function ModalShell({ onClose, title, children }) {
-  return (
-    <div
-      className="fixed inset-0 bg-black/45 flex items-center justify-center z-1000"
-      onClick={onClose}
-      role="dialog"
-    >
-      <div
-        className="bg-white dark:bg-zinc-900 rounded-[18px] w-full max-w-105 shadow-[0_18px_48px_rgba(15,23,42,0.18)] dark:shadow-[0_18px_48px_rgba(0,0,0,0.5)] overflow-hidden font-poppins"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-5 py-4 font-bold text-sm bg-[#980001] text-white">
-          <span>{title}</span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="bg-transparent border-none cursor-pointer text-white opacity-80 hover:opacity-100 p-0.5 flex items-center transition-opacity"
-          >
-            <X size={18} />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-const fieldCls =
-  "px-3 py-2.5 border border-gray-200 dark:border-zinc-700 rounded-full text-sm outline-none bg-gray-50 dark:bg-zinc-800 text-gray-800 dark:text-zinc-100 placeholder:text-gray-400 dark:placeholder:text-zinc-500 focus:border-lpu-maroon focus:ring-2 focus:ring-lpu-maroon/20 transition-all";
-const labelCls = "flex flex-col gap-1.5 text-xs font-semibold text-gray-800 dark:text-zinc-200";
-
 function AddAdminModal({ onClose, onCreated }) {
   const [form, setForm] = useState({
     email: "",
@@ -387,77 +363,55 @@ function AddAdminModal({ onClose, onCreated }) {
   };
 
   return (
-    <ModalShell onClose={onClose} title="Add Admin Account">
-      <form className="flex flex-col gap-4 p-5" onSubmit={onSubmit}>
-        <label className={labelCls}>
-          Full Name
-          <input
-            value={form.fullName}
-            onChange={onChange("fullName")}
-            placeholder="Juan dela Cruz"
-            className={fieldCls}
-          />
-        </label>
-        <label className={labelCls}>
-          Email <span className="text-red-600">*</span>
-          <input
-            type="email"
-            required
-            value={form.email}
-            onChange={onChange("email")}
-            placeholder="admin@example.com"
-            className={fieldCls}
-          />
-        </label>
-        <label className={labelCls}>
-          Password <span className="text-red-600">*</span>
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={form.password}
-            onChange={onChange("password")}
-            placeholder="Min. 6 characters"
-            className={fieldCls}
-          />
-        </label>
-        <label className={labelCls}>
-          Role
-          <select
-            value={form.adminLevel}
-            onChange={onChange("adminLevel")}
-            className={fieldCls}
-          >
-            {Object.entries(ADMIN_LEVEL_LABELS).map(([val, label]) => (
-              <option key={val} value={val}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
+    <FormModal title="Add Admin Account" icon={UserPlus} onClose={onClose}>
+      <form className="px-5 py-6 flex flex-col gap-5" onSubmit={onSubmit}>
+        <FloatingInput
+          label="Full Name"
+          value={form.fullName}
+          onChange={onChange("fullName")}
+          autoComplete="name"
+        />
+        <FloatingInput
+          label="Email (Required)"
+          type="email"
+          required
+          value={form.email}
+          onChange={onChange("email")}
+          autoComplete="email"
+        />
+        <FloatingInput
+          label="Password (Required)"
+          type="password"
+          required
+          minLength={6}
+          value={form.password}
+          onChange={onChange("password")}
+          autoComplete="new-password"
+        />
+        <FloatingSelect
+          label="Role"
+          name="adminLevel"
+          value={form.adminLevel}
+          onChange={onChange("adminLevel")}
+          options={Object.entries(ADMIN_LEVEL_LABELS).map(([value, label]) => ({
+            value,
+            label,
+          }))}
+        />
         {err && (
-          <p className="text-xs text-red-800 -mt-1.5 -mb-1 px-3 py-2 bg-red-50 rounded-lg">
+          <div className="text-xs text-red-800 px-3 py-2 bg-red-50 rounded-md border border-red-100">
             {err}
-          </p>
+          </div>
         )}
-        <div className="flex justify-end gap-2.5 pt-1">
-          <button
-            type="button"
+        <div className="flex justify-end gap-3 pt-2">
+          <SecondaryButton
+            label="Cancel"
             onClick={onClose}
             disabled={submitting}
-            className="px-5 py-2.5 rounded-full text-sm font-semibold border border-gray-200 dark:border-zinc-700 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-700 disabled:opacity-55 disabled:cursor-not-allowed transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={submitting}
-            className="px-5 py-2.5 rounded-full text-sm font-semibold border border-lpu-maroon bg-lpu-maroon text-white hover:bg-lpu-red hover:border-lpu-red disabled:opacity-55 disabled:cursor-not-allowed transition-colors"
-          >
-            {submitting ? "Creating…" : "Create"}
-          </button>
+          />
+          <PrimaryButton label="Create" isLoading={submitting} />
         </div>
       </form>
-    </ModalShell>
+    </FormModal>
   );
 }

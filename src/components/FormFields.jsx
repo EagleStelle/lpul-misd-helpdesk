@@ -106,6 +106,26 @@ export const AttachmentPreview = ({ attachments, onRemove }) => {
     </div>
   );
 };
+// FloatingInput: Text input with animated floating label
+export const FloatingInput = ({
+  label,
+  type = "text",
+  className = "",
+  ...props
+}) => {
+  const inputClass =
+    `w-full box-border rounded-xl border border-gray-200 text-[0.95rem] bg-white outline-none transition-all duration-200 focus:ring-2 focus:ring-lpu-gold focus:border-lpu-gold px-[14px] py-[12px] peer ${className}`.trim();
+
+  const labelClass =
+    "absolute left-[14px] top-[12px] text-[0.9rem] text-gray-500 bg-white px-1 transition-all duration-200 pointer-events-none peer-focus:-top-2 peer-focus:text-[0.75rem] peer-focus:font-bold peer-focus:!text-lpu-gold peer-[:not(:placeholder-shown)]:-top-2 peer-[:not(:placeholder-shown)]:text-[0.75rem] peer-[:not(:placeholder-shown)]:font-bold peer-[:not(:placeholder-shown)]:text-gray-500";
+
+  return (
+    <div className="relative flex flex-col w-full group">
+      <input type={type} placeholder=" " className={inputClass} {...props} />
+      <label className={labelClass}>{label}</label>
+    </div>
+  );
+};
 // FloatingSelect: Select dropdown with animated floating label
 export const FloatingSelect = ({
   label,
@@ -115,6 +135,9 @@ export const FloatingSelect = ({
   options,
   required = true,
 }) => {
+  const normalizedOptions = options.map((opt) =>
+    typeof opt === "string" ? { value: opt, label: opt } : opt,
+  );
   const selectClass =
     "w-full appearance-none box-border rounded-xl border border-gray-200 text-[0.95rem] bg-white outline-none transition-all duration-200 focus:ring-2 focus:ring-lpu-gold focus:border-lpu-gold py-[12px] pl-[14px] pr-[36px] cursor-pointer peer";
 
@@ -131,9 +154,9 @@ export const FloatingSelect = ({
         required={required}
       >
         <option value="" disabled hidden></option>
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
+        {normalizedOptions.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
           </option>
         ))}
       </select>
