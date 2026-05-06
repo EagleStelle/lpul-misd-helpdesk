@@ -2,11 +2,11 @@ import { forwardRef } from "react";
 import { ChevronDown, Paperclip, X } from "lucide-react";
 
 // PrimaryButton: Main action button, typically for form submission
-export const PrimaryButton = ({ label, isLoading, icon: Icon, ...props }) => (
+export const PrimaryButton = ({ label, isLoading, icon: Icon, className = "", ...props }) => (
   <button
     type="submit"
     disabled={isLoading}
-    className="inline-flex justify-center items-center gap-2 bg-lpu-maroon text-white border border-transparent px-8 py-3 rounded-xl cursor-pointer text-[0.95rem] font-bold transition-all duration-200 hover:bg-lpu-gold hover:text-lpu-maroon shadow-lg shadow-lpu-maroon/20 md:w-auto disabled:opacity-50"
+    className={`inline-flex justify-center items-center gap-2 bg-lpu-maroon text-white border border-lpu-maroon px-8 py-3 rounded-xl cursor-pointer text-[0.95rem] font-bold transition-all duration-200 hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold shadow-lg shadow-lpu-maroon/20 md:w-auto disabled:opacity-50 ${className}`}
     {...props}
   >
     {!isLoading && Icon && <Icon size={18} className="stroke-[2.2px]" />}
@@ -20,13 +20,14 @@ export const SecondaryButton = ({
   onClick,
   icon: Icon,
   disabled,
+  className = "",
   ...props
 }) => (
   <button
     type="button"
     onClick={onClick}
     disabled={disabled}
-    className="inline-flex justify-center items-center gap-2 bg-white text-lpu-maroon border border-lpu-maroon px-8 py-3 rounded-xl cursor-pointer text-[0.95rem] font-bold transition-all duration-200 hover:bg-lpu-maroon hover:text-white hover:border-lpu-maroon md:w-auto disabled:opacity-50"
+    className={`inline-flex justify-center items-center gap-2 bg-white dark:bg-zinc-900 text-lpu-maroon dark:text-lpu-gold border border-lpu-maroon dark:border-lpu-gold px-8 py-3 rounded-xl cursor-pointer text-[0.95rem] font-bold transition-all duration-200 hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold dark:hover:bg-lpu-gold dark:hover:text-lpu-maroon dark:hover:border-lpu-gold md:w-auto disabled:opacity-50 ${className}`}
     {...props}
   >
     {Icon && <Icon size={18} className="stroke-[2.2px]" />}
@@ -114,10 +115,10 @@ export const FloatingInput = ({
   ...props
 }) => {
   const inputClass =
-    `w-full box-border rounded-xl border border-gray-200 text-[0.95rem] bg-white outline-none transition-all duration-200 focus:ring-2 focus:ring-lpu-gold focus:border-lpu-gold px-[14px] py-[12px] peer ${className}`.trim();
+    `w-full box-border rounded-xl border border-gray-200 dark:border-zinc-700 text-[0.95rem] bg-white dark:bg-zinc-900 dark:text-zinc-100 outline-none transition-all duration-200 focus:ring-2 focus:ring-lpu-gold focus:border-lpu-gold px-[14px] py-[12px] peer ${className}`.trim();
 
   const labelClass =
-    "absolute left-[14px] top-[12px] text-[0.9rem] text-gray-500 bg-white px-1 transition-all duration-200 pointer-events-none peer-focus:-top-2 peer-focus:text-[0.75rem] peer-focus:font-bold peer-focus:!text-lpu-gold peer-[:not(:placeholder-shown)]:-top-2 peer-[:not(:placeholder-shown)]:text-[0.75rem] peer-[:not(:placeholder-shown)]:font-bold peer-[:not(:placeholder-shown)]:text-gray-500";
+    "absolute left-[14px] top-[12px] text-[0.9rem] text-gray-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 px-1 transition-all duration-200 pointer-events-none peer-focus:-top-2 peer-focus:text-[0.75rem] peer-focus:font-bold peer-focus:!text-lpu-gold peer-[:not(:placeholder-shown)]:-top-2 peer-[:not(:placeholder-shown)]:text-[0.75rem] peer-[:not(:placeholder-shown)]:font-bold peer-[:not(:placeholder-shown)]:text-gray-500 dark:peer-[:not(:placeholder-shown)]:text-zinc-400";
 
   return (
     <div className="relative flex flex-col w-full group">
@@ -139,10 +140,10 @@ export const FloatingSelect = ({
     typeof opt === "string" ? { value: opt, label: opt } : opt,
   );
   const selectClass =
-    "w-full appearance-none box-border rounded-xl border border-gray-200 text-[0.95rem] bg-white outline-none transition-all duration-200 focus:ring-2 focus:ring-lpu-gold focus:border-lpu-gold py-[12px] pl-[14px] pr-[36px] cursor-pointer peer";
+    "w-full appearance-none box-border rounded-xl border border-gray-200 dark:border-zinc-700 text-[0.95rem] bg-white dark:bg-zinc-900 dark:text-zinc-100 outline-none transition-all duration-200 focus:ring-2 focus:ring-lpu-gold focus:border-lpu-gold py-[12px] pl-[14px] pr-[36px] cursor-pointer peer";
 
   const labelClass =
-    "absolute left-[14px] top-[12px] text-[0.9rem] text-gray-500 bg-white px-1 transition-all duration-200 pointer-events-none peer-focus:-top-2 peer-focus:text-[0.75rem] peer-focus:font-bold peer-focus:!text-lpu-gold peer-valid:-top-2 peer-valid:text-[0.75rem] peer-valid:font-bold peer-valid:text-gray-500";
+    "absolute left-[14px] top-[12px] text-[0.9rem] text-gray-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 px-1 transition-all duration-200 pointer-events-none peer-focus:-top-2 peer-focus:text-[0.75rem] peer-focus:font-bold peer-focus:!text-lpu-gold peer-valid:-top-2 peer-valid:text-[0.75rem] peer-valid:font-bold peer-valid:text-gray-500 dark:peer-valid:text-zinc-400";
 
   return (
     <div className="relative flex flex-col w-full group">
@@ -178,10 +179,10 @@ export const FloatingTextarea = ({
   heightClass = "h-[50px]",
   required = true,
 }) => {
-  const textareaClass = `w-full box-border rounded-xl border border-gray-200 text-[0.95rem] bg-white outline-none transition-all duration-200 focus:ring-2 focus:ring-lpu-gold focus:border-lpu-gold px-[14px] py-[12px] peer resize-none ${heightClass}`;
+  const textareaClass = `w-full box-border rounded-xl border border-gray-200 dark:border-zinc-700 text-[0.95rem] bg-white dark:bg-zinc-900 dark:text-zinc-100 outline-none transition-all duration-200 focus:ring-2 focus:ring-lpu-gold focus:border-lpu-gold px-[14px] py-[12px] peer resize-none ${heightClass}`;
 
   const labelClass =
-    "absolute left-[14px] top-[12px] text-[0.9rem] text-gray-500 bg-white px-1 transition-all duration-200 pointer-events-none peer-focus:-top-2 peer-focus:text-[0.75rem] peer-focus:font-bold peer-focus:!text-lpu-gold peer-[:not(:placeholder-shown)]:-top-2 peer-[:not(:placeholder-shown)]:text-[0.75rem] peer-[:not(:placeholder-shown)]:font-bold peer-[:not(:placeholder-shown)]:text-gray-500";
+    "absolute left-[14px] top-[12px] text-[0.9rem] text-gray-500 dark:text-zinc-400 bg-white dark:bg-zinc-900 px-1 transition-all duration-200 pointer-events-none peer-focus:-top-2 peer-focus:text-[0.75rem] peer-focus:font-bold peer-focus:!text-lpu-gold peer-[:not(:placeholder-shown)]:-top-2 peer-[:not(:placeholder-shown)]:text-[0.75rem] peer-[:not(:placeholder-shown)]:font-bold peer-[:not(:placeholder-shown)]:text-gray-500 dark:peer-[:not(:placeholder-shown)]:text-zinc-400";
 
   return (
     <div className="relative flex flex-col w-full group md:col-span-2">

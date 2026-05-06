@@ -54,7 +54,7 @@ export const SearchInput = ({
       <button
         type="button"
         onClick={commit}
-        className="shrink-0 h-8 px-4 mx-1.5 bg-lpu-maroon text-white text-sm font-semibold rounded-md shadow-sm hover:bg-lpu-red hover:shadow-md active:scale-95 transition-all duration-200 ease-in-out cursor-pointer"
+        className="shrink-0 h-8 px-4 mx-1.5 bg-lpu-maroon text-white text-sm font-semibold rounded-md shadow-sm hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold active:scale-95 transition-all duration-200 ease-in-out cursor-pointer"
       >
         Search
       </button>

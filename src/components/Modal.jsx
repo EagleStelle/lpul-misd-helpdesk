@@ -13,6 +13,11 @@ import {
 import { useState, useEffect } from "react";
 import { getApiBaseUrl } from "../utils/apiBaseUrl";
 import { realtimeSupabase } from "../lib/realtimeSupabaseClient";
+import {
+  FloatingInput,
+  PrimaryButton,
+  SecondaryButton,
+} from "./FormFields";
 
 /**
  * Modal — generic reusable modal shell.
@@ -31,10 +36,10 @@ export function Modal({ header, children, className = "" }) {
      */
     <div className="fixed inset-0 z-1200 flex items-center justify-center p-4 pb-18 md:pb-4 bg-black/50 backdrop-blur-sm">
       <div
-        className={`w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden font-poppins border-t-[6px] border-lpu-maroon ${className}`}
+        className={`w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl shadow-xl overflow-hidden font-poppins border-t-[6px] border-lpu-maroon dark:border-lpu-gold ${className}`}
       >
         {header && (
-          <div className="px-5 py-4 flex items-center justify-between gap-3 border-b border-gray-100">
+          <div className="px-5 py-4 flex items-center justify-between gap-3 border-b border-gray-100 dark:border-zinc-800">
             {header}
           </div>
         )}
@@ -176,8 +181,8 @@ export function FormModal({
   const header = (
     <>
       <div className="flex items-center gap-2.5 min-w-0">
-        {Icon && <Icon size={20} className="shrink-0 text-lpu-maroon" />}
-        <h2 className="text-lpu-maroon font-black text-lg tracking-tight leading-tight truncate">
+        {Icon && <Icon size={20} className="shrink-0 text-lpu-maroon dark:text-lpu-gold" />}
+        <h2 className="text-lpu-maroon dark:text-lpu-gold font-black text-lg tracking-tight leading-tight truncate">
           {title}
         </h2>
       </div>
@@ -185,7 +190,7 @@ export function FormModal({
         <button
           type="button"
           onClick={onClose}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-lpu-maroon hover:bg-gray-100 transition-colors"
+          className="p-1.5 rounded-lg text-gray-400 hover:text-lpu-maroon hover:bg-gray-100 dark:text-zinc-500 dark:hover:text-lpu-gold dark:hover:bg-zinc-800 transition-colors"
           aria-label="Close"
         >
           <X size={18} />
@@ -306,14 +311,13 @@ function ProfileSection({ loading, loadErr, profile, setProfile, onClose }) {
         </div>
       </div>
 
-      <FieldInput
+      <FloatingInput
         label="Full Name"
         value={fullName}
         onChange={(e) => setFullName(e.target.value)}
-        placeholder="Your name"
         autoComplete="name"
       />
-      <FieldInput
+      <FloatingInput
         label="Email"
         type="email"
         required
@@ -324,22 +328,9 @@ function ProfileSection({ loading, loadErr, profile, setProfile, onClose }) {
 
       <StatusLine msg={msg} err={err} />
 
-      <div className="flex gap-2 pt-1">
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={saving}
-          className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold text-gray-600 dark:text-zinc-300 bg-gray-100 dark:bg-[#2b2b2f] hover:bg-gray-200 dark:hover:bg-[#3a3a3f] transition-colors disabled:opacity-50"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={saving}
-          className="flex-1 px-4 py-2 rounded-lg text-sm font-bold text-white bg-lpu-maroon hover:bg-lpu-red transition-colors disabled:opacity-50"
-        >
-          {saving ? "Saving…" : "Save changes"}
-        </button>
+      <div className="flex gap-3 pt-1">
+        <SecondaryButton label="Cancel" onClick={onClose} disabled={saving} className="flex-1" />
+        <PrimaryButton label={saving ? "Saving…" : "Save changes"} isLoading={saving} className="flex-1" />
       </div>
     </form>
   );
@@ -390,7 +381,7 @@ function SecuritySection() {
 
   return (
     <form onSubmit={onSave} className="flex flex-col gap-4">
-      <FieldInput
+      <FloatingInput
         label="Current Password"
         type="password"
         value={oldPassword}
@@ -398,7 +389,7 @@ function SecuritySection() {
         autoComplete="current-password"
         required
       />
-      <FieldInput
+      <FloatingInput
         label="New Password"
         type="password"
         minLength={6}
@@ -407,7 +398,7 @@ function SecuritySection() {
         autoComplete="new-password"
         required
       />
-      <FieldInput
+      <FloatingInput
         label="Confirm New Password"
         type="password"
         minLength={6}
@@ -419,13 +410,7 @@ function SecuritySection() {
 
       <StatusLine msg={msg} err={err} />
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="w-full px-4 py-2 rounded-lg text-sm font-bold text-white bg-lpu-maroon hover:bg-lpu-red transition-colors disabled:opacity-50"
-      >
-        {saving ? "Updating…" : "Change password"}
-      </button>
+      <PrimaryButton label={saving ? "Updating…" : "Change password"} isLoading={saving} className="w-full" />
     </form>
   );
 }
@@ -517,19 +502,19 @@ export function SettingsModal({ open, onClose, darkMode, onToggleDark }) {
 
   return (
     <div className="fixed inset-0 z-1200 flex items-center justify-center p-4 pb-18 md:pb-4 bg-black/50 backdrop-blur-sm">
-      <div className="settings-modal-panel w-full max-w-2xl bg-white dark:bg-[#141416] rounded-2xl shadow-xl overflow-hidden font-poppins border-t-[6px] border-lpu-maroon flex flex-col max-h-[90vh]">
+      <div className="settings-modal-panel w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl shadow-xl overflow-hidden font-poppins border-t-[6px] border-lpu-maroon dark:border-lpu-gold flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-5 py-4 flex items-center justify-between gap-3 border-b border-gray-100 dark:border-[#2b2b2f] shrink-0">
+        <div className="px-5 py-4 flex items-center justify-between gap-3 border-b border-gray-100 dark:border-zinc-800 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
-            <Settings size={20} className="shrink-0 text-lpu-maroon" />
-            <h2 className="text-lpu-maroon font-black text-lg tracking-tight leading-tight">
+            <Settings size={20} className="shrink-0 text-lpu-maroon dark:text-lpu-gold" />
+            <h2 className="text-lpu-maroon dark:text-lpu-gold font-black text-lg tracking-tight leading-tight">
               Settings
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 dark:text-zinc-500 hover:text-lpu-maroon hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 dark:text-zinc-500 hover:text-lpu-maroon hover:bg-gray-100 dark:hover:text-lpu-gold dark:hover:bg-zinc-800 transition-colors"
             aria-label="Close"
           >
             <X size={18} />
@@ -559,7 +544,7 @@ export function SettingsModal({ open, onClose, darkMode, onToggleDark }) {
 
           {/* Content pane */}
           <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4 min-w-0">
-            <h3 className="text-base font-black text-gray-800 dark:text-zinc-100 border-b border-gray-100 dark:border-[#2b2b2f] pb-3">
+            <h3 className="text-base font-black text-gray-800 dark:text-lpu-gold border-b border-gray-100 dark:border-zinc-800 pb-3">
               {NAV_ITEMS.find((i) => i.id === activeSection)?.label}
             </h3>
             {activeSection === "account" && (

@@ -368,7 +368,7 @@ function Tickets() {
           <p className="text-gray-600 mb-6">{error}</p>
           <button
             onClick={() => setRealtimeTick((n) => n + 1)}
-            className="w-full py-3 bg-lpu-maroon text-white font-bold rounded-lg hover:bg-lpu-red transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 bg-lpu-maroon text-white font-bold rounded-lg border border-lpu-maroon hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold transition-colors flex items-center justify-center gap-2"
           >
             Try Again
           </button>

@@ -124,7 +124,7 @@ function ChatbotWidget() {
                       {msg.suggestions.map((s) => (
                         <button
                           key={s}
-                          className="text-[11px] px-2.5 py-1 rounded-full border border-lpu-maroon/60 text-lpu-maroon hover:bg-lpu-maroon hover:text-white hover:border-lpu-maroon transition-colors leading-tight"
+                          className="text-[11px] px-2.5 py-1 rounded-full border border-lpu-maroon/60 text-lpu-maroon hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold transition-colors leading-tight"
                           onClick={() => sendMessage(s)}
                         >
                           {s}
@@ -141,7 +141,7 @@ function ChatbotWidget() {
                 {CHATBOT_SUGGESTIONS.map((s) => (
                   <button
                     key={s}
-                    className="text-[11.5px] px-2.5 py-1 rounded-full border border-lpu-maroon text-lpu-maroon hover:bg-lpu-maroon hover:text-white transition-colors leading-tight"
+                    className="text-[11.5px] px-2.5 py-1 rounded-full border border-lpu-maroon text-lpu-maroon hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold transition-colors leading-tight"
                     onClick={() => sendMessage(s)}
                   >
                     {s}
@@ -171,7 +171,7 @@ function ChatbotWidget() {
                   Let me connect you with a support technician.
                 </p>
                 <button
-                  className="inline-flex items-center gap-1.5 bg-lpu-maroon text-white rounded-md p-2 px-3.5 text-xs font-semibold hover:bg-lpu-red transition-colors"
+                  className="inline-flex items-center gap-1.5 bg-lpu-maroon text-white rounded-md p-2 px-3.5 text-xs font-semibold hover:bg-lpu-gold hover:text-lpu-maroon transition-colors"
                   onClick={handleHandoff}
                 >
                   Fill out a support ticket <ArrowRight size={14} />
@@ -196,7 +196,7 @@ function ChatbotWidget() {
               }
             />
             <button
-              className="shrink-0 w-8.5 h-8.5 rounded-full bg-lpu-maroon text-white flex items-center justify-center transition-colors hover:bg-lpu-red disabled:opacity-50 disabled:cursor-not-allowed"
+              className="shrink-0 w-8.5 h-8.5 rounded-full bg-lpu-maroon text-white flex items-center justify-center transition-colors hover:bg-lpu-gold hover:text-lpu-maroon disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => sendMessage(inputText)}
               disabled={
                 !inputText.trim() ||

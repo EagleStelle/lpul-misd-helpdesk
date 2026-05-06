@@ -14,7 +14,7 @@ const BTN_STYLES = {
   primary:
     "bg-lpu-maroon border-lpu-maroon text-white hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold",
   secondary:
-    "border-lpu-maroon text-lpu-maroon hover:bg-lpu-maroon hover:text-white hover:border-lpu-maroon dark:border-lpu-gold dark:text-lpu-gold dark:hover:bg-lpu-maroon dark:hover:text-white dark:hover:border-lpu-maroon",
+    "border-lpu-maroon text-lpu-maroon dark:border-lpu-gold dark:text-lpu-gold hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold dark:hover:bg-lpu-gold dark:hover:text-lpu-maroon dark:hover:border-lpu-gold",
 };
 
 export function TableButton({
@@ -162,7 +162,7 @@ export function DataTable({
     switch (col.variant) {
       case "badge":
         return (
-          <span className="h-9 inline-flex items-center justify-center px-3 bg-gray-100 dark:bg-zinc-800 dark:text-zinc-200 group-hover:bg-lpu-maroon group-hover:text-white dark:group-hover:bg-lpu-gold dark:group-hover:text-lpu-maroon rounded-lg text-sm font-bold transition-colors whitespace-nowrap border border-transparent group-hover:border-lpu-maroon dark:group-hover:border-lpu-gold">
+          <span className="h-9 inline-flex items-center justify-center px-3 bg-gray-100 dark:bg-zinc-800 dark:text-zinc-200 group-hover:bg-lpu-maroon group-hover:text-white dark:group-hover:bg-lpu-gold dark:group-hover:text-black rounded-lg text-sm font-bold transition-colors whitespace-nowrap">
             #{value}
           </span>
         );

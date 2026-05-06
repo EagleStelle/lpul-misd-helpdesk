@@ -399,7 +399,7 @@ function AddAdminModal({ onClose, onCreated }) {
           }))}
         />
         {err && (
-          <div className="text-xs text-red-800 px-3 py-2 bg-red-50 rounded-md border border-red-100">
+          <div className="text-xs text-red-800 dark:text-red-400 px-3 py-2 bg-red-50 dark:bg-red-950/20 rounded-md border border-red-100 dark:border-red-900/30">
             {err}
           </div>
         )}

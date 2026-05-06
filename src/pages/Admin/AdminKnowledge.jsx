@@ -58,7 +58,7 @@ function EntryForm({
         required={true}
       />
       {error && (
-        <div className="text-xs text-red-800 px-3 py-2 bg-red-50 rounded-md border border-red-100">
+        <div className="text-xs text-red-800 dark:text-red-400 px-3 py-2 bg-red-50 dark:bg-red-950/20 rounded-md border border-red-100 dark:border-red-900/30">
           {error}
         </div>
       )}
@@ -315,14 +315,14 @@ export default function AdminKnowledge() {
                       </span>
                       <div className="flex gap-1.5">
                         <button
-                          className="flex items-center justify-center w-7 h-7 text-lpu-maroon border border-lpu-maroon rounded-md hover:bg-lpu-maroon hover:text-white hover:border-lpu-maroon dark:text-lpu-gold dark:border-lpu-gold dark:hover:bg-lpu-maroon dark:hover:text-white dark:hover:border-lpu-maroon transition-all duration-200 cursor-pointer shadow-sm"
+                          className="flex items-center justify-center w-7 h-7 text-lpu-maroon border border-lpu-maroon dark:text-lpu-gold dark:border-lpu-gold rounded-md hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold dark:hover:bg-lpu-gold dark:hover:text-lpu-maroon dark:hover:border-lpu-gold transition-all duration-200 cursor-pointer shadow-sm"
                           onClick={() => openEdit(entry)}
                           title="Edit entry"
                         >
                           <Pencil size={12} strokeWidth={2.5} />
                         </button>
                         <button
-                          className="flex items-center justify-center w-7 h-7 bg-lpu-maroon text-white border border-transparent rounded-md hover:bg-lpu-gold hover:text-lpu-maroon shadow-sm transition-all duration-200 cursor-pointer disabled:opacity-50"
+                          className="flex items-center justify-center w-7 h-7 bg-lpu-maroon text-white border border-lpu-maroon rounded-md hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold shadow-sm transition-all duration-200 cursor-pointer disabled:opacity-50"
                           onClick={() => handleDelete(entry.id)}
                           disabled={deletingId === entry.id}
                           title="Delete entry"
@@ -359,7 +359,7 @@ export default function AdminKnowledge() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="h-9 inline-flex items-center justify-center px-3 text-sm font-bold rounded-lg border transition-all whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-lpu-gold focus:ring-offset-1 border-lpu-maroon text-lpu-maroon hover:bg-lpu-maroon hover:text-white hover:border-lpu-maroon dark:border-lpu-gold dark:text-lpu-gold dark:hover:bg-lpu-maroon dark:hover:text-white dark:hover:border-lpu-maroon cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-9 inline-flex items-center justify-center px-3 text-sm font-bold rounded-lg border transition-all whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-lpu-gold focus:ring-offset-1 border-lpu-maroon text-lpu-maroon dark:border-lpu-gold dark:text-lpu-gold hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold dark:hover:bg-lpu-gold dark:hover:text-lpu-maroon dark:hover:border-lpu-gold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft size={16} className="mr-1" /> Prev
               </button>
@@ -367,7 +367,7 @@ export default function AdminKnowledge() {
                 type="button"
                 onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
                 disabled={page >= pageCount - 1}
-                className="h-9 inline-flex items-center justify-center px-3 text-sm font-bold rounded-lg border transition-all whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-lpu-gold focus:ring-offset-1 border-lpu-maroon text-lpu-maroon hover:bg-lpu-maroon hover:text-white hover:border-lpu-maroon dark:border-lpu-gold dark:text-lpu-gold dark:hover:bg-lpu-maroon dark:hover:text-white dark:hover:border-lpu-maroon cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-9 inline-flex items-center justify-center px-3 text-sm font-bold rounded-lg border transition-all whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-lpu-gold focus:ring-offset-1 border-lpu-maroon text-lpu-maroon dark:border-lpu-gold dark:text-lpu-gold hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold dark:hover:bg-lpu-gold dark:hover:text-lpu-maroon dark:hover:border-lpu-gold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next <ChevronRight size={16} className="ml-1" />
               </button>
