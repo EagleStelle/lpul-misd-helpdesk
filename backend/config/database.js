@@ -41,9 +41,8 @@ export const initializeDatabase = async () => {
       .limit(1);
 
     if (error && error.code === "PGRST116") {
-      console.log("Creating auth_users table...");
       // Table doesn't exist, create it
-      const { error: createError } = await supabase.rpc("execute_sql", {
+      await supabase.rpc("execute_sql", {
         sql: `
                     CREATE TABLE IF NOT EXISTS auth_users (
                         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -58,12 +57,6 @@ export const initializeDatabase = async () => {
                     CREATE INDEX IF NOT EXISTS idx_auth_users_email ON auth_users(email);
                 `,
       });
-
-      if (createError) {
-        console.log(
-          "Table might already exist or RPC not available. Continuing...",
-        );
-      }
     }
 
     // Migrate: add user_type and department to auth_users
@@ -313,8 +306,6 @@ export const initializeDatabase = async () => {
         );
         if (createErr) throw createErr;
         console.log("✓ Created storage bucket: ticket-attachments");
-      } else {
-        console.log("✓ Storage bucket already exists: ticket-attachments");
       }
     } catch (storageErr) {
       console.warn(
@@ -590,8 +581,8 @@ export const initializeAdminUsers = async () => {
       await supabase.rpc("execute_sql", {
         sql: "NOTIFY pgrst, 'reload schema';",
       });
-    } catch (err) {
-      console.log("Schema cache reload skipped:", err.message);
+    } catch {
+      // non-critical, PostgREST will reload on next request
     }
   };
 
@@ -603,8 +594,7 @@ export const initializeAdminUsers = async () => {
       .limit(1);
 
     if (isMissingTableError(tableCheckError)) {
-      console.log("Creating admin_users table...");
-      const { error: createError } = await supabase.rpc("execute_sql", {
+      await supabase.rpc("execute_sql", {
         sql: `
           CREATE TABLE IF NOT EXISTS admin_users (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -622,15 +612,9 @@ export const initializeAdminUsers = async () => {
         `,
       });
 
-      if (createError) {
-        console.log(
-          "admin_users table might already exist or execute_sql RPC not available. Continuing...",
-        );
-      }
-
       await reloadSchemaCache();
     } else if (tableCheckError) {
-      console.log("Admin table check error:", tableCheckError.message);
+      console.error("[Admin init] Table check error:", tableCheckError.message);
       return;
     }
 
@@ -749,7 +733,7 @@ export const initializeAdminUsers = async () => {
     }
 
     if (findError) {
-      console.log("Admin seed lookup error:", findError.message);
+      console.error("[Admin init] Seed lookup error:", findError.message);
       return;
     }
 
@@ -772,7 +756,7 @@ export const initializeAdminUsers = async () => {
     ]);
 
     if (insertError) {
-      console.log("Mock admin seed insert failed:", insertError.message);
+      console.error("[Admin init] Seed insert failed:", insertError.message);
       return;
     }
 

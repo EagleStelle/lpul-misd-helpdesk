@@ -125,7 +125,6 @@ async function callLLM(messages) {
   let lastError;
   for (const modelId of CONFIG.MODELS) {
     try {
-      console.log(`[Chatbot] Attempting with model: ${modelId}`);
       const response = await fetchWithTimeout(CONFIG.GROQ_URL, {
         method: "POST",
         headers: {
@@ -258,16 +257,13 @@ export async function sendChatMessage(userMessage, sessionId, userId = null, his
 
   try {
     const raw = await callLLM(llmMessages);
-    console.log("[Chatbot] Raw LLM response:", raw.slice(0, 400));
     const parsed = parseJsonReply(raw);
     if (parsed.answer) botReply = parsed.answer;
     suggestions = parsed.suggestions;
     // If model returned empty suggestions, extract from RAG chunks directly
     if (suggestions.length === 0 && results.length > 0) {
       suggestions = extractChunkQuestions(results, discussedTopics);
-      console.log("[Chatbot] Fallback chunk suggestions:", suggestions);
     }
-    console.log("[Chatbot] Final suggestions:", suggestions);
   } catch (err) {
     console.error("[Chatbot] LLM processing error:", err.message);
     if (results.length > 0) {

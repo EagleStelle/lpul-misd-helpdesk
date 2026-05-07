@@ -187,37 +187,22 @@ const start = async () => {
     await initializeDatabase();
     await initializeAdminUsers();
     app.listen(PORT, "0.0.0.0", () => {
+      const inviteStatus = inviteEnabled
+        ? `enabled (${smtpConfigured ? "SMTP" : ""}${smtpConfigured && resendApiKeyPresent ? "+" : ""}${resendApiKeyPresent ? "Resend" : ""})`
+        : "disabled";
       console.log(`
-╔════════════════════════════════════════╗
-║  LPU MISD Auth Backend                 ║
-║  🚀 Server running on port ${PORT}       ║
-╠════════════════════════════════════════╣
-║  📍 http://localhost:${PORT}             ║
-║  🏥 Health: http://localhost:${PORT}/health ║
-║  📚 Docs: http://localhost:${PORT}/       ║
-║                                          ║
-║  🌐 LAN:  http://${lanIp}:${PORT}          ║
-║  🔒 CORS: ${corsList.padEnd(28).slice(0, 28)}║
-║  🌎 Public: ${publicBase || "(none)"}      ║
-║                                          ║
-║  🗄  DB Kind: ${dbKind}                      ║
-║  🔌 DB URL: ${dbUrl}                        ║
-╚════════════════════════════════════════╝
-            `);
-
-      console.log(
-        "[Admin invite email]",
-        inviteEnabled ? "enabled" : "disabled",
-        "| SMTP:",
-        smtpConfigured ? "configured" : "not configured",
-        `(${smtpHost || "no-host"}:${smtpPort} secure=${smtpSecure})`,
-        "| RESEND_API_KEY:",
-        resendApiKeyPresent ? "present" : "missing",
-        "| PUBLIC_BASE_URL:",
-        publicBase || "(none)",
-        "| DEBUG:",
-        adminInviteDebug ? "on" : "off",
-      );
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  LPU MISD Auth Backend  ·  port ${PORT}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Local   →  http://localhost:${PORT}
+  Health  →  http://localhost:${PORT}/health
+  LAN     →  http://${lanIp}:${PORT}
+  Public  →  ${publicBase || "(none)"}
+  CORS    →  ${corsList}
+  DB      →  ${dbKind}
+  Invite  →  ${inviteStatus}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);
