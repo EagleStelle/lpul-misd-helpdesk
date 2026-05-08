@@ -40,7 +40,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col w-full h-full max-h-full overflow-hidden bg-gray-50">
-      <div className="flex flex-col flex-1 min-h-0 w-full max-w-5xl mx-auto bg-white sm:my-2 sm:rounded-2xl border-x border-gray-100 overflow-hidden shadow-sm">
+      <div className="flex flex-col flex-1 min-h-0 w-full max-w-5xl mx-auto bg-white sm:my-2 sm:rounded-2xl border-t-[6px] border-t-lpu-maroon overflow-hidden shadow-md">
         <ChatHeader
           isBotTicket={true}
           onBack={() => navigate(-1)}
@@ -73,7 +73,9 @@ export default function ChatPage() {
                           : "bg-white text-gray-800 border-gray-100 rounded-tl-none"
                     }`}
                   >
-                    <p className="whitespace-pre-wrap wrap-break-word">{msg.content}</p>
+                    <p className="whitespace-pre-wrap wrap-break-word">
+                      {msg.content}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -152,7 +154,6 @@ export default function ChatPage() {
           disabled={isTyping || isCoolingDown}
           placeholder={cooldownLabel || undefined}
         />
-
       </div>
     </div>
   );
