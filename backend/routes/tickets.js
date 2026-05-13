@@ -248,11 +248,14 @@ router.patch("/:id/status", authMiddleware, async (req, res) => {
         .json({ success: false, message: "status is required" });
 
     const isReopening = status === "Open";
+    const now = new Date().toISOString();
+    const closedAt = !isReopening ? (closed_at ?? now) : null;
+
     let query = supabase
       .from("Tickets")
       .update({
         status,
-        closed_at: closed_at ?? null,
+        closed_at: closedAt,
         ...(isReopening && { satisfaction: null }),
       })
       .eq("id", ticketId);
@@ -269,6 +272,43 @@ router.patch("/:id/status", authMiddleware, async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Ticket not found or access denied" });
+    }
+
+    // Update the open SLA record in ticket_sla_history on close
+    if (!isReopening) {
+      const { data: openSla } = await supabase
+        .from("ticket_sla_history")
+        .select("id, timer_started_at, sla_due_at")
+        .eq("ticket_id", ticketId)
+        .is("timer_stopped_at", null)
+        .limit(1)
+        .single();
+
+      if (openSla?.timer_started_at) {
+        const startMs = Date.parse(openSla.timer_started_at);
+        const endMs = Date.parse(closedAt);
+        const durationSeconds = Math.round((endMs - startMs) / 1000);
+        const slaMetValue = openSla.sla_due_at
+          ? endMs <= Date.parse(openSla.sla_due_at)
+          : null;
+
+        await Promise.all([
+          supabase
+            .from("ticket_sla_history")
+            .update({
+              status: "Closed",
+              timer_stopped_at: closedAt,
+              timer_duration_seconds: durationSeconds,
+              sla_met: slaMetValue,
+              closed_at: closedAt,
+            })
+            .eq("id", openSla.id),
+          supabase
+            .from("Tickets")
+            .update({ timer_duration_seconds: durationSeconds, sla_met: slaMetValue })
+            .eq("id", ticketId),
+        ]);
+      }
     }
 
     if (req.user.app_role === "admin") {

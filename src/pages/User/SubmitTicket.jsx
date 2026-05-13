@@ -153,6 +153,7 @@ function SubmitTicket() {
               sender_name: userName || null,
               sender_email: userEmail || null,
               message_text: descriptionText,
+              ticket_owner_id: userId,
               attachments:
                 attachmentData.length > 0
                   ? JSON.stringify(attachmentData)

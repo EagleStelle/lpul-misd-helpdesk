@@ -609,6 +609,7 @@ export default function TicketChat({ adminView = false } = {}) {
             attachments: uploadedAttachments.length
               ? JSON.stringify(uploadedAttachments)
               : null,
+            ticket_owner_id: ticket?.created_by || null,
           },
         ])
         .select(

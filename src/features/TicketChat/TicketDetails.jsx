@@ -35,87 +35,54 @@ export default function TicketDetails({
     return `${Math.floor(mins / 60)}h ${mins % 60}m`;
   };
 
+  // Active SLA = the open record in ticket_sla_history (no timer_stopped_at)
   const currentSnapshot = (() => {
-    const priority = ticket?.Priority || ticket?.priority || null;
-    const startedAt =
-      ticket?.timer_started_at || ticket?.timerStartedAt || ticket?.started_at;
-    const dueAt = ticket?.sla_due_at || ticket?.slaDueAt || ticket?.due_at;
-    const stoppedAt =
-      ticket?.timer_stopped_at || ticket?.timerStoppedAt || ticket?.stopped_at;
-    const slaMinutes = ticket?.sla_minutes ?? ticket?.slaMinutes ?? null;
-    const durationSeconds =
-      ticket?.timer_duration_seconds ?? ticket?.timerDurationSeconds ?? null;
-    const slaMet =
-      ticket?.sla_met !== undefined
-        ? ticket.sla_met
-        : ticket?.slaMet !== undefined
-          ? ticket.slaMet
-          : null;
-    const closedAt = ticket?.closed_at || ticket?.closedAt || null;
+    const active = Array.isArray(timelineHistory)
+      ? timelineHistory.find((r) => !r.timer_stopped_at)
+      : null;
+    if (!active) return null;
 
-    const hasAny =
-      !!priority ||
-      !!startedAt ||
-      !!dueAt ||
-      !!stoppedAt ||
-      slaMinutes !== null ||
-      durationSeconds !== null ||
-      slaMet !== null;
-    if (!hasAny) return null;
-
+    const dueAt = active.sla_due_at ?? null;
+    const durationSeconds = active.timer_duration_seconds ?? null;
     return {
-      key: closedAt ? `current-closed-${closedAt}` : "current-active",
+      key: "current-active",
       source: "current",
-      priority,
-      timer_started_at: startedAt,
+      priority: active.priority ?? null,
+      timer_started_at: active.timer_started_at ?? null,
       sla_due_at: dueAt,
       remaining: calcRemaining(dueAt),
-      sla_minutes: slaMinutes,
-      timer_stopped_at: stoppedAt,
+      sla_minutes: active.sla_minutes ?? null,
+      timer_stopped_at: null,
       timer_duration_seconds: durationSeconds,
       duration: formatDurationSeconds(durationSeconds),
-      sla_met: slaMet,
-      closed_at: closedAt,
+      sla_met: null,
+      closed_at: null,
     };
   })();
 
   const historySnapshots = (
     Array.isArray(timelineHistory) ? timelineHistory : []
   )
+    .filter((row) => !!row?.timer_stopped_at)
     .map((row, idx) => ({
-      key: row?.id
-        ? `hist-${row.id}`
-        : `hist-${row?.closed_at || idx}`,
+      key: row?.id ? `hist-${row.id}` : `hist-${row?.closed_at || idx}`,
       source: "history",
-      priority: row?.priority ?? row?.Priority ?? null,
-      timer_started_at: row?.timer_started_at ?? row?.started_at ?? null,
-      sla_due_at: row?.sla_due_at ?? row?.due_at ?? null,
+      priority: row?.priority ?? null,
+      timer_started_at: row?.timer_started_at ?? null,
+      sla_due_at: row?.sla_due_at ?? null,
       remaining: "—",
       sla_minutes: row?.sla_minutes ?? null,
-      timer_stopped_at: row?.timer_stopped_at ?? row?.stopped_at ?? null,
+      timer_stopped_at: row?.timer_stopped_at ?? null,
       timer_duration_seconds: row?.timer_duration_seconds ?? null,
       duration: formatDurationSeconds(row?.timer_duration_seconds),
       sla_met: row?.sla_met ?? null,
       closed_at: row?.closed_at ?? null,
-    }))
-    .filter(
-      (s) => s.closed_at || s.timer_stopped_at || s.timer_duration_seconds,
-    );
+    }));
 
-  const snapshots = (() => {
-    const closedAt = ticket?.closed_at || ticket?.closedAt || null;
-    const topHistoryClosedAt = historySnapshots[0]?.closed_at || null;
-    const shouldOmitCurrentBecauseDup =
-      closedAt &&
-      topHistoryClosedAt &&
-      String(closedAt) === String(topHistoryClosedAt);
-
-    const list = [];
-    if (currentSnapshot && !shouldOmitCurrentBecauseDup)
-      list.push(currentSnapshot);
-    list.push(...historySnapshots);
-    return list;
-  })();
+  const snapshots = [
+    ...(currentSnapshot ? [currentSnapshot] : []),
+    ...historySnapshots,
+  ];
 
   return (
     <div className="bg-white border-b border-gray-100 shrink-0 overflow-hidden">

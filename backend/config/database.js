@@ -6,8 +6,6 @@ import bcrypt from "bcryptjs";
 dotenv.config();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-// Prefer a server-side service role key when available (required for inserts/updates
-// when Row Level Security is enabled). Fall back to the anon key if not set.
 const supabaseKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
 
@@ -17,565 +15,377 @@ if (!supabaseUrl || !supabaseKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-/**
- * Setup auth table in Supabase if it doesn't exist
- * This function is called on server startup
- */
+const sql = async (query) => {
+  const { error } = await supabase.rpc("execute_sql", { sql: query });
+  if (error) throw error;
+};
+
 export const initializeDatabase = async () => {
   try {
-    const kind = process.env.SUPABASE_SERVICE_ROLE_KEY
-      ? "service_role"
-      : "anon";
+    const kind = process.env.SUPABASE_SERVICE_ROLE_KEY ? "service_role" : "anon";
     const origin = (() => {
-      try {
-        return new URL(supabaseUrl).origin;
-      } catch {
-        return supabaseUrl;
-      }
+      try { return new URL(supabaseUrl).origin; } catch { return supabaseUrl; }
     })();
     console.log(`[DB] Using Supabase (${kind}) at ${origin}`);
 
-    // Check if auth_users table exists by trying to select from it
-    const { data, error } = await supabase
-      .from("auth_users")
-      .select("id")
-      .limit(1);
-
-    if (error && error.code === "PGRST116") {
-      // Table doesn't exist, create it
-      await supabase.rpc("execute_sql", {
-        sql: `
-                    CREATE TABLE IF NOT EXISTS auth_users (
-                        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                        email VARCHAR(255) NOT NULL UNIQUE,
-                        password_hash VARCHAR(255) NOT NULL,
-                        full_name VARCHAR(255),
-                        is_active BOOLEAN DEFAULT true,
-                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-                    );
-
-                    CREATE INDEX IF NOT EXISTS idx_auth_users_email ON auth_users(email);
-                `,
-      });
+    // Verify execute_sql exists — created by backend/schema.sql
+    const { error: rpcCheck } = await supabase.rpc("execute_sql", { sql: "SELECT 1" });
+    if (rpcCheck) {
+      console.error(`
+╔══════════════════════════════════════════════════════════════╗
+║  DATABASE SETUP REQUIRED                                     ║
+║                                                              ║
+║  The 'execute_sql' function is missing from your Supabase    ║
+║  project. Run the one-time setup script first:               ║
+║                                                              ║
+║  1. Open https://app.supabase.com/project/_/sql              ║
+║  2. Paste and run the contents of backend/schema.sql         ║
+║  3. Restart the backend                                       ║
+╚══════════════════════════════════════════════════════════════╝
+      `);
+      return;
     }
 
-    // Migrate: add user_type and department to auth_users
-    try {
-      await supabase.rpc("execute_sql", {
-        sql: `
-          DO $$
-          BEGIN
-            IF NOT EXISTS (
-              SELECT 1 FROM information_schema.columns
-              WHERE table_schema = 'public' AND table_name = 'auth_users' AND column_name = 'user_type'
-            ) THEN
-              ALTER TABLE auth_users ADD COLUMN user_type VARCHAR(50);
-            END IF;
-            IF NOT EXISTS (
-              SELECT 1 FROM information_schema.columns
-              WHERE table_schema = 'public' AND table_name = 'auth_users' AND column_name = 'department'
-            ) THEN
-              ALTER TABLE auth_users ADD COLUMN department VARCHAR(100);
-            END IF;
-          END
-          $$;
-        `,
-      });
-      console.log("✓ auth_users");
-    } catch (migrateErr) {
-      console.warn("auth_users user_type/department migration skipped:", migrateErr.message);
-    }
-
-    // Ensure ticket-related tables/columns exist
-    try {
-      await supabase.rpc("execute_sql", {
-        sql: `
-          -- Ticket messages table for chat
-          CREATE TABLE IF NOT EXISTS ticket_messages (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            ticket_id INTEGER NOT NULL,
-            sender_id UUID NOT NULL,
-            sender_role TEXT NOT NULL CHECK (sender_role IN ('user', 'admin')),
-            sender_name TEXT,
-            sender_email TEXT,
-            attachments TEXT,
-            message_text TEXT NOT NULL,
-            created_at TIMESTAMPTZ DEFAULT NOW()
-          );
-
-          CREATE INDEX IF NOT EXISTS idx_ticket_messages_ticket_id
-            ON ticket_messages(ticket_id, created_at);
-
-          ALTER TABLE ticket_messages ENABLE ROW LEVEL SECURITY;
-
-          DO $$
-          BEGIN
-            IF NOT EXISTS (
-              SELECT 1 FROM pg_policies
-              WHERE schemaname = 'public'
-                AND tablename = 'ticket_messages'
-                AND policyname = 'ticket_messages_select'
-            ) THEN
-              CREATE POLICY ticket_messages_select
-                ON ticket_messages
-                FOR SELECT
-                USING (
-                  (auth.jwt() ->> 'app_role') = 'admin'
-                  OR EXISTS (
-                    SELECT 1
-                    FROM "Tickets" t
-                    WHERE t.id = ticket_messages.ticket_id
-                      AND t.created_by = auth.uid()
-                  )
-                );
-            END IF;
-
-            IF NOT EXISTS (
-              SELECT 1 FROM pg_policies
-              WHERE schemaname = 'public'
-                AND tablename = 'ticket_messages'
-                AND policyname = 'ticket_messages_insert'
-            ) THEN
-              CREATE POLICY ticket_messages_insert
-                ON ticket_messages
-                FOR INSERT
-                WITH CHECK (
-                  sender_id = auth.uid()
-                  AND (
-                    (auth.jwt() ->> 'app_role') = 'admin'
-                    OR EXISTS (
-                      SELECT 1
-                      FROM "Tickets" t
-                      WHERE t.id = ticket_messages.ticket_id
-                        AND t.created_by = auth.uid()
-                    )
-                  )
-                );
-            END IF;
-          END
-          $$;
-
-          DO $$
-          BEGIN
-            IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_name = 'ticket_messages' AND column_name = 'sender_name'
-            ) THEN
-              ALTER TABLE ticket_messages ADD COLUMN sender_name TEXT;
-            END IF;
-
-            IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_name = 'ticket_messages' AND column_name = 'sender_email'
-            ) THEN
-              ALTER TABLE ticket_messages ADD COLUMN sender_email TEXT;
-            END IF;
-
-            IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_name = 'ticket_messages' AND column_name = 'attachments'
-            ) THEN
-              ALTER TABLE ticket_messages ADD COLUMN attachments TEXT;
-            END IF;
-          END
-          $$;
-
-          -- Optional assignee columns on Tickets table (no-op if they already exist)
-          DO $$
-          BEGIN
-            -- Ensure Tickets table exists. If not, create with typical fields used by UI.
-            IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.tables
-              WHERE table_name = 'Tickets' AND table_schema = 'public'
-            ) THEN
-              CREATE TABLE "Tickets" (
-                id SERIAL PRIMARY KEY,
-                Summary TEXT,
-                Description TEXT,
-                Type TEXT,
-                Department TEXT,
-                Category TEXT,
-                Site TEXT,
-                created_by UUID,
-                created_by_name TEXT,
-                created_by_email TEXT,
-                status TEXT DEFAULT 'Open',
-                created_at TIMESTAMPTZ DEFAULT NOW(),
-                closed_at TIMESTAMPTZ
-              );
-            END IF;
-
-            IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_name = 'Tickets' AND column_name = 'created_by_name'
-            ) THEN
-              ALTER TABLE "Tickets" ADD COLUMN created_by_name TEXT;
-            END IF;
-
-            IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_name = 'Tickets' AND column_name = 'created_by_email'
-            ) THEN
-              ALTER TABLE "Tickets" ADD COLUMN created_by_email TEXT;
-            END IF;
-
-            IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_name = 'Tickets' AND column_name = 'Assignee1'
-            ) THEN
-              ALTER TABLE "Tickets" ADD COLUMN "Assignee1" TEXT;
-            END IF;
-
-            IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_name = 'Tickets' AND column_name = 'Assignee2'
-            ) THEN
-              ALTER TABLE "Tickets" ADD COLUMN "Assignee2" TEXT;
-            END IF;
-
-            IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_name = 'Tickets' AND column_name = 'Assignee3'
-            ) THEN
-              ALTER TABLE "Tickets" ADD COLUMN "Assignee3" TEXT;
-            END IF;
-
-            IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_name = 'Tickets' AND column_name = 'created_at'
-            ) THEN
-              ALTER TABLE "Tickets" ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();
-            END IF;
-
-            IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_name = 'Tickets' AND column_name = 'closed_at'
-            ) THEN
-              ALTER TABLE "Tickets" ADD COLUMN closed_at TIMESTAMPTZ;
-            END IF;
-
-            IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_name = 'Tickets' AND column_name = 'status'
-            ) THEN
-              ALTER TABLE "Tickets" ADD COLUMN status TEXT DEFAULT 'Open';
-            END IF;
-
-            IF NOT EXISTS (
-              SELECT 1
-              FROM information_schema.columns
-              WHERE table_name = 'Tickets' AND column_name = 'satisfaction'
-            ) THEN
-              ALTER TABLE "Tickets" ADD COLUMN satisfaction BOOLEAN;
-            END IF;
-          END
-          $$;
-        `,
-      });
-    } catch (ticketInitError) {
-      console.warn(
-        "Ticketing tables/columns initialization skipped:",
-        ticketInitError.message,
+    // ── auth_users ────────────────────────────────────────────
+    await sql(`
+      CREATE TABLE IF NOT EXISTS auth_users (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        full_name VARCHAR(255),
+        user_type VARCHAR(50),
+        department VARCHAR(100),
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
       );
-    }
+      CREATE INDEX IF NOT EXISTS idx_auth_users_email ON auth_users(email);
+      ALTER TABLE auth_users ENABLE ROW LEVEL SECURITY;
+    `);
+    console.log("✓ auth_users");
 
-    // Ensure the ticket-attachments Storage bucket exists
+    // ── admin_users ───────────────────────────────────────────
+    await sql(`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        full_name VARCHAR(255),
+        is_active BOOLEAN DEFAULT true,
+        admin_level INTEGER NOT NULL DEFAULT 1 CHECK (admin_level IN (0, 1)),
+        supabase_auth_id UUID,
+        email_verified_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users(email);
+      ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+    `);
+    console.log("✓ admin_users");
+
+    // ── Tickets ───────────────────────────────────────────────
+    await sql(`
+      CREATE TABLE IF NOT EXISTS "Tickets" (
+        id SERIAL PRIMARY KEY,
+        "Summary" TEXT,
+        "Description" TEXT,
+        "Type" TEXT,
+        "Department" TEXT,
+        "Category" TEXT,
+        "Site" TEXT,
+        "Assignee1" TEXT,
+        "Assignee2" TEXT,
+        "Assignee3" TEXT,
+        "Priority" TEXT,
+        created_by UUID,
+        created_by_name TEXT,
+        created_by_email TEXT,
+        status TEXT DEFAULT 'Open',
+        satisfaction BOOLEAN,
+        timer_duration_seconds INTEGER,
+        sla_met BOOLEAN,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        closed_at TIMESTAMPTZ
+      );
+      ALTER TABLE "Tickets" ENABLE ROW LEVEL SECURITY;
+      ALTER PUBLICATION supabase_realtime ADD TABLE "Tickets";
+    `);
+    console.log("✓ Tickets");
+
+    // ── ticket_messages ───────────────────────────────────────
+    await sql(`
+      CREATE TABLE IF NOT EXISTS ticket_messages (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        ticket_id INTEGER NOT NULL,
+        sender_id UUID NOT NULL,
+        sender_role TEXT NOT NULL CHECK (sender_role IN ('user', 'admin')),
+        sender_name TEXT,
+        sender_email TEXT,
+        attachments TEXT,
+        message_text TEXT NOT NULL,
+        ticket_owner_id UUID,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_ticket_messages_ticket_id
+        ON ticket_messages(ticket_id, created_at);
+      ALTER TABLE ticket_messages ENABLE ROW LEVEL SECURITY;
+      ALTER PUBLICATION supabase_realtime ADD TABLE ticket_messages;
+    `);
+    console.log("✓ ticket_messages");
+
+    // ── ticket_sla_history ────────────────────────────────────
+    await sql(`
+      CREATE TABLE IF NOT EXISTS ticket_sla_history (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        ticket_id INTEGER NOT NULL,
+        status TEXT,
+        priority TEXT,
+        timer_started_at TIMESTAMPTZ,
+        sla_due_at TIMESTAMPTZ,
+        sla_minutes INTEGER,
+        timer_stopped_at TIMESTAMPTZ,
+        timer_duration_seconds INTEGER,
+        sla_met BOOLEAN,
+        opened_at TIMESTAMPTZ,
+        closed_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_ticket_sla_history_ticket_id
+        ON ticket_sla_history(ticket_id, closed_at DESC);
+      ALTER TABLE ticket_sla_history ENABLE ROW LEVEL SECURITY;
+      ALTER PUBLICATION supabase_realtime ADD TABLE ticket_sla_history;
+    `);
+    console.log("✓ ticket_sla_history");
+
+    // ── SLA trigger ───────────────────────────────────────────
+    await sql(`
+      CREATE OR REPLACE FUNCTION fn_sla_start_on_first_admin_message()
+      RETURNS TRIGGER AS $$
+      DECLARE
+        v_priority TEXT;
+        v_sla_minutes INTEGER;
+      BEGIN
+        IF NEW.sender_role = 'admin' THEN
+          IF NOT EXISTS (
+            SELECT 1 FROM ticket_sla_history
+            WHERE ticket_id = NEW.ticket_id AND timer_stopped_at IS NULL
+          ) THEN
+            SELECT "Priority" INTO v_priority FROM "Tickets" WHERE id = NEW.ticket_id;
+            v_sla_minutes := CASE COALESCE(v_priority, 'Low')
+              WHEN 'High'   THEN 30
+              WHEN 'Medium' THEN 45
+              ELSE 60
+            END;
+            INSERT INTO ticket_sla_history (
+              ticket_id, status, priority,
+              timer_started_at, sla_due_at, sla_minutes, opened_at
+            ) VALUES (
+              NEW.ticket_id, 'Open', v_priority,
+              NEW.created_at,
+              NEW.created_at + (v_sla_minutes * INTERVAL '1 minute'),
+              v_sla_minutes,
+              NEW.created_at
+            );
+          END IF;
+        END IF;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+      DROP TRIGGER IF EXISTS trg_sla_start ON ticket_messages;
+      CREATE TRIGGER trg_sla_start
+        AFTER INSERT ON ticket_messages
+        FOR EACH ROW EXECUTE FUNCTION fn_sla_start_on_first_admin_message();
+    `);
+    console.log("✓ SLA trigger");
+
+    // ── activity_logs ─────────────────────────────────────────
+    await sql(`
+      CREATE TABLE IF NOT EXISTS activity_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        admin_id UUID NOT NULL,
+        action_type VARCHAR(50) NOT NULL,
+        target_type VARCHAR(50),
+        target_id VARCHAR(100),
+        target_label VARCHAR(255),
+        metadata JSONB DEFAULT '{}',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_activity_logs_admin_id ON activity_logs(admin_id);
+      CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at DESC);
+      ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
+    `);
+    console.log("✓ activity_logs");
+
+    // ── chatbot tables ────────────────────────────────────────
+    await sql(`
+      CREATE TABLE IF NOT EXISTS chatbot_sessions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        session_id TEXT NOT NULL UNIQUE,
+        user_id UUID,
+        status TEXT DEFAULT 'active' CHECK (status IN ('active', 'resolved', 'transferred')),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_chatbot_sessions_session_id ON chatbot_sessions(session_id);
+      CREATE INDEX IF NOT EXISTS idx_chatbot_sessions_user_id ON chatbot_sessions(user_id);
+      ALTER TABLE chatbot_sessions ENABLE ROW LEVEL SECURITY;
+
+      CREATE TABLE IF NOT EXISTS chatbot_messages (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        session_id TEXT NOT NULL,
+        role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+        content TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_chatbot_messages_session_id
+        ON chatbot_messages(session_id, created_at);
+      ALTER TABLE chatbot_messages ENABLE ROW LEVEL SECURITY;
+
+      CREATE TABLE IF NOT EXISTS chatbot_account_limits (
+        key TEXT PRIMARY KEY,
+        user_id UUID,
+        chat_count INTEGER NOT NULL DEFAULT 0,
+        cooldown_until TIMESTAMPTZ,
+        window_start TIMESTAMPTZ,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_chatbot_account_limits_user_id
+        ON chatbot_account_limits(user_id);
+      ALTER TABLE chatbot_account_limits ENABLE ROW LEVEL SECURITY;
+    `);
+    console.log("✓ chatbot_sessions / chatbot_messages / chatbot_account_limits");
+
+    // ── knowledge_base ────────────────────────────────────────
+    await sql(`
+      CREATE EXTENSION IF NOT EXISTS vector;
+
+      CREATE TABLE IF NOT EXISTS knowledge_base (
+        id BIGSERIAL PRIMARY KEY,
+        content TEXT NOT NULL,
+        metadata JSONB DEFAULT '{}'::jsonb,
+        embedding vector(768),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_knowledge_base_embedding
+        ON knowledge_base USING ivfflat (embedding vector_cosine_ops)
+        WITH (lists = 100);
+      ALTER TABLE knowledge_base ENABLE ROW LEVEL SECURITY;
+
+      CREATE OR REPLACE FUNCTION search_knowledge_base(
+        query_embedding vector(768),
+        match_threshold FLOAT,
+        match_count INT
+      )
+      RETURNS TABLE (
+        id BIGINT,
+        content TEXT,
+        metadata JSONB,
+        similarity FLOAT
+      )
+      LANGUAGE plpgsql
+      AS $$
+      BEGIN
+        RETURN QUERY
+        SELECT
+          kb.id,
+          kb.content,
+          kb.metadata,
+          1 - (kb.embedding <=> query_embedding) AS similarity
+        FROM knowledge_base kb
+        WHERE 1 - (kb.embedding <=> query_embedding) > match_threshold
+        ORDER BY kb.embedding <=> query_embedding
+        LIMIT match_count;
+      END;
+      $$;
+    `);
+    console.log("✓ knowledge_base");
+
+    // ── Storage bucket ────────────────────────────────────────
     try {
-      const { data: buckets, error: listErr } =
-        await supabase.storage.listBuckets();
+      const { data: buckets, error: listErr } = await supabase.storage.listBuckets();
       if (listErr) throw listErr;
-      const exists = buckets?.some((b) => b.name === "ticket-attachments");
-      if (!exists) {
+      if (!buckets?.some((b) => b.name === "ticket-attachments")) {
         const { error: createErr } = await supabase.storage.createBucket(
           "ticket-attachments",
-          {
-            public: true,
-          },
+          { public: true }
         );
         if (createErr) throw createErr;
         console.log("✓ ticket-attachments (bucket created)");
       }
     } catch (storageErr) {
-      console.warn(
-        "Storage bucket initialization skipped:",
-        storageErr.message,
-      );
+      console.warn("Storage bucket init skipped:", storageErr.message);
     }
 
-    // Chatbot sessions table
-    try {
-      await supabase.rpc("execute_sql", {
-        sql: `
-          CREATE TABLE IF NOT EXISTS chatbot_sessions (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            session_id TEXT NOT NULL UNIQUE,
-            user_id UUID,
-            status TEXT DEFAULT 'active' CHECK (status IN ('active', 'resolved', 'transferred')),
-            created_at TIMESTAMPTZ DEFAULT NOW(),
-            updated_at TIMESTAMPTZ DEFAULT NOW()
+    // ── RLS policies ──────────────────────────────────────────
+    await sql(`
+      DO $$
+      BEGIN
+        -- Tickets
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'Tickets' AND policyname = 'tickets_select') THEN
+          CREATE POLICY tickets_select ON "Tickets" FOR SELECT USING (
+            created_by = auth.uid() OR (auth.jwt() ->> 'app_role') = 'admin'
           );
-
-          CREATE INDEX IF NOT EXISTS idx_chatbot_sessions_session_id ON chatbot_sessions(session_id);
-          CREATE INDEX IF NOT EXISTS idx_chatbot_sessions_user_id ON chatbot_sessions(user_id);
-        `,
-      });
-      console.log("✓ chatbot_sessions");
-    } catch (chatbotInitError) {
-      console.warn("chatbot_sessions init skipped:", chatbotInitError.message);
-    }
-
-    // Chatbot messages table (used by chatbotService logging)
-    try {
-      await supabase.rpc("execute_sql", {
-        sql: `
-          CREATE TABLE IF NOT EXISTS chatbot_messages (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            session_id TEXT NOT NULL,
-            role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
-            content TEXT NOT NULL,
-            created_at TIMESTAMPTZ DEFAULT NOW()
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'Tickets' AND policyname = 'tickets_insert') THEN
+          CREATE POLICY tickets_insert ON "Tickets" FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'Tickets' AND policyname = 'tickets_update') THEN
+          CREATE POLICY tickets_update ON "Tickets" FOR UPDATE USING (
+            (auth.jwt() ->> 'app_role') = 'admin'
           );
+        END IF;
 
-          CREATE INDEX IF NOT EXISTS idx_chatbot_messages_session_id
-            ON chatbot_messages(session_id, created_at);
-        `,
-      });
-      console.log("✓ chatbot_messages");
-    } catch (chatbotMsgsInitError) {
-      console.warn("chatbot_messages init skipped:", chatbotMsgsInitError.message);
-    }
-
-    // Chatbot per-account limiter table
-    try {
-      await supabase.rpc("execute_sql", {
-        sql: `
-          CREATE TABLE IF NOT EXISTS chatbot_account_limits (
-            key TEXT PRIMARY KEY,
-            user_id UUID,
-            chat_count INTEGER NOT NULL DEFAULT 0,
-            cooldown_until TIMESTAMPTZ,
-            window_start TIMESTAMPTZ,
-            updated_at TIMESTAMPTZ DEFAULT NOW()
+        -- auth_users
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'auth_users' AND policyname = 'auth_users_select') THEN
+          CREATE POLICY auth_users_select ON auth_users FOR SELECT USING (
+            id = auth.uid() OR (auth.jwt() ->> 'app_role') = 'admin'
           );
+        END IF;
 
-          DO $$
-          BEGIN
-            IF NOT EXISTS (
-              SELECT 1 FROM information_schema.columns
-              WHERE table_schema = 'public' AND table_name = 'chatbot_account_limits' AND column_name = 'window_start'
-            ) THEN
-              ALTER TABLE public.chatbot_account_limits
-                ADD COLUMN window_start TIMESTAMPTZ;
-            END IF;
-          END
-          $$;
-
-          CREATE INDEX IF NOT EXISTS idx_chatbot_account_limits_user_id
-            ON chatbot_account_limits(user_id);
-        `,
-      });
-      console.log("✓ chatbot_account_limits");
-    } catch (limiterInitError) {
-      console.warn(
-        "chatbot_account_limits init skipped:",
-        limiterInitError.message,
-      );
-    }
-
-    // Knowledge base table (RAG / chatbot)
-    try {
-      await supabase.rpc("execute_sql", {
-        sql: `
-          CREATE EXTENSION IF NOT EXISTS vector;
-
-          CREATE TABLE IF NOT EXISTS knowledge_base (
-            id BIGSERIAL PRIMARY KEY,
-            content TEXT NOT NULL,
-            metadata JSONB DEFAULT '{}'::jsonb,
-            embedding vector(768),
-            created_at TIMESTAMPTZ DEFAULT NOW()
+        -- admin_users
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'admin_users' AND policyname = 'admin_users_select') THEN
+          CREATE POLICY admin_users_select ON admin_users FOR SELECT USING (
+            (auth.jwt() ->> 'app_role') = 'admin'
           );
+        END IF;
 
-          CREATE INDEX IF NOT EXISTS idx_knowledge_base_embedding
-            ON knowledge_base USING ivfflat (embedding vector_cosine_ops)
-            WITH (lists = 100);
-
-          CREATE OR REPLACE FUNCTION search_knowledge_base(
-            query_embedding vector(768),
-            match_threshold FLOAT,
-            match_count INT
-          )
-          RETURNS TABLE (
-            id BIGINT,
-            content TEXT,
-            metadata JSONB,
-            similarity FLOAT
-          )
-          LANGUAGE plpgsql
-          AS $$
-          BEGIN
-            RETURN QUERY
-            SELECT
-              kb.id,
-              kb.content,
-              kb.metadata,
-              1 - (kb.embedding <=> query_embedding) AS similarity
-            FROM knowledge_base kb
-            WHERE 1 - (kb.embedding <=> query_embedding) > match_threshold
-            ORDER BY kb.embedding <=> query_embedding
-            LIMIT match_count;
-          END;
-          $$;
-        `,
-      });
-      console.log("✓ knowledge_base");
-    } catch (knowledgeInitError) {
-      console.warn("knowledge_base init skipped:", knowledgeInitError.message);
-    }
-
-    // Ticket SLA history table (timeline snapshots per ticket)
-    try {
-      await supabase.rpc("execute_sql", {
-        sql: `
-          CREATE TABLE IF NOT EXISTS ticket_sla_history (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            ticket_id INTEGER NOT NULL,
-            status TEXT,
-            opened_at TIMESTAMPTZ,
-            closed_at TIMESTAMPTZ,
-            created_at TIMESTAMPTZ DEFAULT NOW()
+        -- ticket_messages
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'ticket_messages' AND policyname = 'ticket_messages_select') THEN
+          CREATE POLICY ticket_messages_select ON ticket_messages FOR SELECT USING (
+            (auth.jwt() ->> 'app_role') = 'admin'
+            OR EXISTS (
+              SELECT 1 FROM "Tickets" t
+              WHERE t.id = ticket_messages.ticket_id AND t.created_by = auth.uid()
+            )
           );
-
-          CREATE INDEX IF NOT EXISTS idx_ticket_sla_history_ticket_id
-            ON ticket_sla_history(ticket_id, closed_at DESC);
-        `,
-      });
-      console.log("✓ ticket_sla_history");
-    } catch (slaInitError) {
-      console.warn("ticket_sla_history init skipped:", slaInitError.message);
-    }
-
-    // activity_logs table
-    try {
-      await supabase.rpc("execute_sql", {
-        sql: `
-          CREATE TABLE IF NOT EXISTS activity_logs (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            admin_id UUID NOT NULL,
-            action_type VARCHAR(50) NOT NULL,
-            target_type VARCHAR(50),
-            target_id VARCHAR(100),
-            target_label VARCHAR(255),
-            metadata JSONB DEFAULT '{}',
-            created_at TIMESTAMPTZ DEFAULT NOW()
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'ticket_messages' AND policyname = 'ticket_messages_insert') THEN
+          CREATE POLICY ticket_messages_insert ON ticket_messages FOR INSERT WITH CHECK (
+            sender_id = auth.uid()
+            AND (
+              (auth.jwt() ->> 'app_role') = 'admin'
+              OR EXISTS (
+                SELECT 1 FROM "Tickets" t
+                WHERE t.id = ticket_messages.ticket_id AND t.created_by = auth.uid()
+              )
+            )
           );
-          CREATE INDEX IF NOT EXISTS idx_activity_logs_admin_id ON activity_logs(admin_id);
-          CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at DESC);
-        `,
-      });
-      console.log("✓ activity_logs");
-    } catch (activityInitError) {
-      console.warn("activity_logs init skipped:", activityInitError.message);
-    }
+        END IF;
 
-    // RLS policies for all tables
-    // Backend uses service_role key which bypasses RLS entirely.
-    // Policies here only govern frontend (anon key + user JWT).
-    try {
-      await supabase.rpc("execute_sql", {
-        sql: `
-          -- Tickets: users see own, admins see all; only admins can update
-          ALTER TABLE "Tickets" ENABLE ROW LEVEL SECURITY;
-
-          DO $$
-          BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'Tickets' AND policyname = 'tickets_select') THEN
-              CREATE POLICY tickets_select ON "Tickets" FOR SELECT USING (
-                created_by = auth.uid() OR (auth.jwt() ->> 'app_role') = 'admin'
-              );
-            END IF;
-
-            IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'Tickets' AND policyname = 'tickets_insert') THEN
-              CREATE POLICY tickets_insert ON "Tickets" FOR INSERT WITH CHECK (
-                auth.uid() IS NOT NULL
-              );
-            END IF;
-
-            IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'Tickets' AND policyname = 'tickets_update') THEN
-              CREATE POLICY tickets_update ON "Tickets" FOR UPDATE USING (
-                (auth.jwt() ->> 'app_role') = 'admin'
-              );
-            END IF;
-          END
-          $$;
-
-          -- auth_users: users see own row, admins see all; no frontend mutations
-          ALTER TABLE auth_users ENABLE ROW LEVEL SECURITY;
-
-          DO $$
-          BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'auth_users' AND policyname = 'auth_users_select') THEN
-              CREATE POLICY auth_users_select ON auth_users FOR SELECT USING (
-                id = auth.uid() OR (auth.jwt() ->> 'app_role') = 'admin'
-              );
-            END IF;
-          END
-          $$;
-
-          -- admin_users: admins see all; no frontend mutations
-          ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
-
-          DO $$
-          BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'admin_users' AND policyname = 'admin_users_select') THEN
-              CREATE POLICY admin_users_select ON admin_users FOR SELECT USING (
-                (auth.jwt() ->> 'app_role') = 'admin'
-              );
-            END IF;
-          END
-          $$;
-
-          -- ticket_sla_history: users see own ticket history, admins see all; no frontend mutations
-          ALTER TABLE ticket_sla_history ENABLE ROW LEVEL SECURITY;
-
-          DO $$
-          BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'ticket_sla_history' AND policyname = 'ticket_sla_history_select') THEN
-              CREATE POLICY ticket_sla_history_select ON ticket_sla_history FOR SELECT USING (
-                (auth.jwt() ->> 'app_role') = 'admin'
-                OR EXISTS (
-                  SELECT 1 FROM "Tickets" t WHERE t.id = ticket_id AND t.created_by = auth.uid()
-                )
-              );
-            END IF;
-          END
-          $$;
-
-          -- Backend-only tables: enable RLS, no policies = anon/user blocked, service_role bypasses
-          ALTER TABLE knowledge_base ENABLE ROW LEVEL SECURITY;
-          ALTER TABLE chatbot_sessions ENABLE ROW LEVEL SECURITY;
-          ALTER TABLE chatbot_messages ENABLE ROW LEVEL SECURITY;
-          ALTER TABLE chatbot_account_limits ENABLE ROW LEVEL SECURITY;
-          ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
-        `,
-      });
-      console.log("✓ RLS policies");
-    } catch (rlsError) {
-      console.warn("RLS policy setup skipped:", rlsError.message);
-    }
+        -- ticket_sla_history
+        IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'ticket_sla_history' AND policyname = 'ticket_sla_history_select') THEN
+          CREATE POLICY ticket_sla_history_select ON ticket_sla_history FOR SELECT USING (
+            (auth.jwt() ->> 'app_role') = 'admin'
+            OR EXISTS (
+              SELECT 1 FROM "Tickets" t WHERE t.id = ticket_id AND t.created_by = auth.uid()
+            )
+          );
+        END IF;
+      END
+      $$;
+    `);
+    console.log("✓ RLS policies");
 
     console.log("✓ Database ready");
   } catch (error) {
@@ -583,9 +393,6 @@ export const initializeDatabase = async () => {
   }
 };
 
-/**
- * Create admin_users table + seed a mock admin (optional)
- */
 export const initializeAdminUsers = async () => {
   const seedEmail = process.env.ADMIN_SEED_EMAIL;
   const seedPassword = process.env.ADMIN_SEED_PASSWORD;
@@ -595,148 +402,48 @@ export const initializeAdminUsers = async () => {
     if (!err) return false;
     if (err.code === "PGRST116") return true;
     const msg = (err.message || "").toLowerCase();
-    return (
-      msg.includes("schema cache") || msg.includes("could not find the table")
-    );
+    return msg.includes("schema cache") || msg.includes("could not find the table");
   };
 
   const reloadSchemaCache = async () => {
     try {
-      await supabase.rpc("execute_sql", {
-        sql: "NOTIFY pgrst, 'reload schema';",
-      });
+      await supabase.rpc("execute_sql", { sql: "NOTIFY pgrst, 'reload schema';" });
     } catch {
-      // non-critical, PostgREST will reload on next request
+      // non-critical
     }
   };
 
   try {
-    // Check if table exists
     const { error: tableCheckError } = await supabase
       .from("admin_users")
       .select("id")
       .limit(1);
 
     if (isMissingTableError(tableCheckError)) {
-      await supabase.rpc("execute_sql", {
-        sql: `
-          CREATE TABLE IF NOT EXISTS admin_users (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            email VARCHAR(255) NOT NULL UNIQUE,
-            password_hash VARCHAR(255) NOT NULL,
-            full_name VARCHAR(255),
-            is_active BOOLEAN DEFAULT true,
-            admin_level INTEGER NOT NULL DEFAULT 1 CHECK (admin_level IN (0, 1)),
-            email_verified_at TIMESTAMPTZ,
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-          );
-
-          CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users(email);
-        `,
-      });
-
+      await sql(`
+        CREATE TABLE IF NOT EXISTS admin_users (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          email VARCHAR(255) NOT NULL UNIQUE,
+          password_hash VARCHAR(255) NOT NULL,
+          full_name VARCHAR(255),
+          is_active BOOLEAN DEFAULT true,
+          admin_level INTEGER NOT NULL DEFAULT 1 CHECK (admin_level IN (0, 1)),
+          supabase_auth_id UUID,
+          email_verified_at TIMESTAMPTZ,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          updated_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users(email);
+        ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+      `);
       await reloadSchemaCache();
     } else if (tableCheckError) {
       console.error("[Admin init] Table check error:", tableCheckError.message);
       return;
     }
 
-    // Migrate: add admin_level column if it doesn't exist
-    try {
-      await supabase.rpc("execute_sql", {
-        sql: `
-          DO $$
-          BEGIN
-            IF NOT EXISTS (
-              SELECT 1 FROM information_schema.columns
-              WHERE table_name = 'admin_users' AND column_name = 'admin_level'
-            ) THEN
-              ALTER TABLE admin_users
-                ADD COLUMN admin_level INTEGER NOT NULL DEFAULT 1
-                CHECK (admin_level IN (0, 1));
-            END IF;
-
-            ALTER TABLE admin_users
-              ALTER COLUMN admin_level SET DEFAULT 1;
-          END
-          $$;
-        `,
-      });
-    } catch (migrateErr) {
-      console.warn("admin_level migration skipped:", migrateErr.message);
-    }
-
-    // Migrate: simplify admin levels — convert old levels 2 and 3 to Ticket Admin (1)
-    try {
-      await supabase.rpc("execute_sql", {
-        sql: `
-          DO $$
-          BEGIN
-            UPDATE admin_users SET admin_level = 1 WHERE admin_level IN (2, 3);
-            BEGIN
-              ALTER TABLE admin_users DROP CONSTRAINT IF EXISTS admin_users_admin_level_check;
-              ALTER TABLE admin_users ADD CONSTRAINT admin_users_admin_level_check CHECK (admin_level IN (0, 1));
-            EXCEPTION WHEN OTHERS THEN
-              NULL;
-            END;
-          END
-          $$;
-        `,
-      });
-    } catch (migrateErr) {
-      console.warn("admin_level simplification migration skipped:", migrateErr.message);
-    }
-
-    // Migrate: add supabase_auth_id to track the corresponding Supabase Auth user
-    try {
-      await supabase.rpc("execute_sql", {
-        sql: `
-          DO $$
-          BEGIN
-            IF NOT EXISTS (
-              SELECT 1 FROM information_schema.columns
-              WHERE table_schema = 'public' AND table_name = 'admin_users' AND column_name = 'supabase_auth_id'
-            ) THEN
-              ALTER TABLE admin_users ADD COLUMN supabase_auth_id UUID;
-            END IF;
-          END
-          $$;
-        `,
-      });
-    } catch (migrateErr) {
-      console.warn("supabase_auth_id migration skipped:", migrateErr.message);
-    }
-
-    // New admins invited by root must verify email; existing rows are backfilled once when
-    // this column is first added (same migration block — not on every startup).
-    try {
-      await supabase.rpc("execute_sql", {
-        sql: `
-          DO $$
-          BEGIN
-            IF NOT EXISTS (
-              SELECT 1 FROM information_schema.columns
-              WHERE table_schema = 'public' AND table_name = 'admin_users' AND column_name = 'email_verified_at'
-            ) THEN
-              ALTER TABLE admin_users ADD COLUMN email_verified_at TIMESTAMPTZ;
-              UPDATE admin_users
-                SET email_verified_at = COALESCE(created_at, NOW())
-                WHERE email_verified_at IS NULL;
-            END IF;
-          END
-          $$;
-        `,
-      });
-    } catch (migrateErr) {
-      console.warn("email_verified_at migration skipped:", migrateErr.message);
-    }
-
-    // Seed mock admin (only if env vars provided)
     if (!seedEmail || !seedPassword) {
-      console.log(
-        "Skipping admin seed (set ADMIN_SEED_EMAIL and ADMIN_SEED_PASSWORD to create a mock admin).",
-      );
+      console.log("Skipping admin seed (set ADMIN_SEED_EMAIL and ADMIN_SEED_PASSWORD to seed a root admin).");
       return;
     }
 
@@ -767,17 +474,14 @@ export const initializeAdminUsers = async () => {
     }
 
     const passwordHash = await bcrypt.hash(seedPassword, 10);
-
-    const { error: insertError } = await supabase.from("admin_users").insert([
-      {
-        email: seedEmail,
-        password_hash: passwordHash,
-        full_name: seedFullName,
-        is_active: true,
-        admin_level: 0,
-        email_verified_at: new Date().toISOString(),
-      },
-    ]);
+    const { error: insertError } = await supabase.from("admin_users").insert([{
+      email: seedEmail,
+      password_hash: passwordHash,
+      full_name: seedFullName,
+      is_active: true,
+      admin_level: 0,
+      email_verified_at: new Date().toISOString(),
+    }]);
 
     if (insertError) {
       console.error("[Admin init] Seed insert failed:", insertError.message);
