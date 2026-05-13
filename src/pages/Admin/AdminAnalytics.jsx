@@ -18,6 +18,12 @@ const ANALYTICS_TYPE_ORDER = ["Student", "Faculty", "Admin"];
 const ANALYTICS_SITE_ORDER = ["Onsite", "Online", "OTHERS"];
 const SLA_PRIORITY_ORDER = ["Low", "Medium", "High"];
 
+function normalizeDepartment(raw) {
+  const s = String(raw ?? "").trim().toUpperCase();
+  if (s.includes("HIGHSCHO")) return "HIGHSCHOOL";
+  return s;
+}
+
 const COLORS = {
   closed: "#336be3",
   open: "#e6bc23",
@@ -417,7 +423,7 @@ export default function AdminAnalytics() {
   const visibleTickets = useMemo(() => {
     let filtered = ticketsFilteredByDate;
     if (selectedDept) {
-      filtered = filtered.filter((t) => (t?.Department || "").trim() === selectedDept);
+      filtered = filtered.filter((t) => normalizeDepartment(t?.Department) === selectedDept);
     }
     return filtered;
   }, [ticketsFilteredByDate, selectedDept]);
@@ -434,7 +440,7 @@ export default function AdminAnalytics() {
     // IMPORTANT: Department chart should use tickets filtered by date but NOT by department
     // so that other bars don't disappear when one is selected.
     ticketsFilteredByDate.forEach((ticket) => {
-      const dept = (ticket?.Department || "").trim();
+      const dept = normalizeDepartment(ticket?.Department);
       if (dept && statsMap.has(dept)) {
         const stat = statsMap.get(dept);
         stat.total += 1;
@@ -483,6 +489,10 @@ export default function AdminAnalytics() {
   const slaByAdminAndPriority = useMemo(() => {
     const closedTickets = tickets.filter((t) => {
       if (!t?.closed_at) return false;
+
+      // Filter by department if selected
+      if (selectedDept && normalizeDepartment(t?.Department) !== selectedDept) return false;
+
       if (!fromDate && !toDate) return true;
       const ymd = toYMDLocal(t.closed_at);
       if (!ymd) return false;
@@ -498,10 +508,7 @@ export default function AdminAnalytics() {
       const priority = normalizePriorityLabel(ticket);
       const minutes = durationMinutesFromSeconds(ticket?.timer_duration_seconds);
 
-      if (assignees.length === 0) {
-        // Handle unassigned tickets if needed, or skip
-        return;
-      }
+      if (assignees.length === 0) return;
 
       assignees.forEach(assigneeId => {
         if (!adminMap[assigneeId]) {
@@ -530,7 +537,7 @@ export default function AdminAnalytics() {
     }
 
     return result;
-  }, [tickets, fromDate, toDate, currentUserId, isGlobalAdminUser, adminUsers]);
+  }, [tickets, fromDate, toDate, currentUserId, isGlobalAdminUser, adminUsers, selectedDept]);
 
   const formatFilterDate = (ymd) => {
     if (!ymd) return "";
