@@ -39,6 +39,8 @@ CREATE INDEX IF NOT EXISTS idx_auth_users_email ON auth_users(email);
 
 ALTER TABLE auth_users ENABLE ROW LEVEL SECURITY;
 
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.auth_users TO service_role;
+
 DROP POLICY IF EXISTS auth_users_select ON auth_users;
 CREATE POLICY auth_users_select ON auth_users FOR SELECT USING (
     id = auth.uid() OR (auth.jwt() ->> 'app_role') = 'admin'
@@ -62,6 +64,8 @@ CREATE TABLE IF NOT EXISTS admin_users (
 CREATE INDEX IF NOT EXISTS idx_admin_users_email ON admin_users(email);
 
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.admin_users TO service_role;
 
 DROP POLICY IF EXISTS admin_users_select ON admin_users;
 CREATE POLICY admin_users_select ON admin_users FOR SELECT USING (
@@ -97,6 +101,9 @@ CREATE TABLE IF NOT EXISTS "Tickets" (
 
 ALTER TABLE "Tickets" ENABLE ROW LEVEL SECURITY;
 ALTER PUBLICATION supabase_realtime ADD TABLE "Tickets";
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public."Tickets" TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE public."Tickets_id_seq" TO service_role;
 
 DROP POLICY IF EXISTS tickets_select ON "Tickets";
 CREATE POLICY tickets_select ON "Tickets" FOR SELECT USING (
@@ -134,6 +141,8 @@ ALTER TABLE ticket_messages ENABLE ROW LEVEL SECURITY;
 
 -- Enable realtime for chat
 ALTER PUBLICATION supabase_realtime ADD TABLE ticket_messages;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.ticket_messages TO service_role;
 
 DROP POLICY IF EXISTS ticket_messages_select ON ticket_messages;
 CREATE POLICY ticket_messages_select ON ticket_messages FOR SELECT USING (
@@ -178,6 +187,8 @@ CREATE INDEX IF NOT EXISTS idx_ticket_sla_history_ticket_id ON ticket_sla_histor
 
 ALTER TABLE ticket_sla_history ENABLE ROW LEVEL SECURITY;
 ALTER PUBLICATION supabase_realtime ADD TABLE ticket_sla_history;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.ticket_sla_history TO service_role;
 
 DROP POLICY IF EXISTS ticket_sla_history_select ON ticket_sla_history;
 CREATE POLICY ticket_sla_history_select ON ticket_sla_history FOR SELECT USING (
@@ -243,6 +254,8 @@ CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created
 
 ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.activity_logs TO service_role;
+
 -- backend-only: no frontend policies (service_role bypasses RLS)
 
 -- ============================================================
@@ -261,6 +274,8 @@ CREATE INDEX IF NOT EXISTS idx_chatbot_sessions_user_id ON chatbot_sessions(user
 
 ALTER TABLE chatbot_sessions ENABLE ROW LEVEL SECURITY;
 
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.chatbot_sessions TO service_role;
+
 -- ============================================================
 -- chatbot_messages
 -- ============================================================
@@ -274,6 +289,8 @@ CREATE TABLE IF NOT EXISTS chatbot_messages (
 CREATE INDEX IF NOT EXISTS idx_chatbot_messages_session_id ON chatbot_messages(session_id, created_at);
 
 ALTER TABLE chatbot_messages ENABLE ROW LEVEL SECURITY;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.chatbot_messages TO service_role;
 
 -- ============================================================
 -- chatbot_account_limits
@@ -289,6 +306,8 @@ CREATE TABLE IF NOT EXISTS chatbot_account_limits (
 CREATE INDEX IF NOT EXISTS idx_chatbot_account_limits_user_id ON chatbot_account_limits(user_id);
 
 ALTER TABLE chatbot_account_limits ENABLE ROW LEVEL SECURITY;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.chatbot_account_limits TO service_role;
 
 -- ============================================================
 -- knowledge_base (requires pgvector — enabled by default on Supabase)
@@ -307,6 +326,9 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_base_embedding
     WITH (lists = 100);
 
 ALTER TABLE knowledge_base ENABLE ROW LEVEL SECURITY;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.knowledge_base TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE public.knowledge_base_id_seq TO service_role;
 
 CREATE OR REPLACE FUNCTION search_knowledge_base(
     query_embedding vector(768),

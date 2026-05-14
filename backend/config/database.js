@@ -48,7 +48,7 @@ export const initializeDatabase = async () => {
 ║                                                              ║
 ║  1. Open https://app.supabase.com/project/_/sql              ║
 ║  2. Paste and run the contents of backend/schema.sql         ║
-║  3. Restart the backend                                       ║
+║  3. Restart the backend                                      ║
 ╚══════════════════════════════════════════════════════════════╝
       `);
       return;
@@ -348,6 +348,23 @@ export const initializeDatabase = async () => {
     } catch (storageErr) {
       console.warn("Storage bucket init skipped:", storageErr.message);
     }
+
+    // ── Data API grants (required from Oct 30 2026 for existing projects) ────
+    await sql(`
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.auth_users TO service_role;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.admin_users TO service_role;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public."Tickets" TO service_role;
+      GRANT USAGE, SELECT ON SEQUENCE public."Tickets_id_seq" TO service_role;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.ticket_messages TO service_role;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.ticket_sla_history TO service_role;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.activity_logs TO service_role;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.chatbot_sessions TO service_role;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.chatbot_messages TO service_role;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.chatbot_account_limits TO service_role;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.knowledge_base TO service_role;
+      GRANT USAGE, SELECT ON SEQUENCE public.knowledge_base_id_seq TO service_role;
+    `);
+    console.log("✓ Data API grants");
 
     // ── RLS policies ──────────────────────────────────────────
     await sql(`
