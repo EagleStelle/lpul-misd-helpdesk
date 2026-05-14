@@ -49,7 +49,6 @@ export default function ChatMessages({
   isImageFile,
   onOpenAttachment,
   onDownloadAttachment,
-  isImageFile,
   transcriptCreatorName,
 }) {
   const formatTimeAgo = (value) => {
