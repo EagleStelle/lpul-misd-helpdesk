@@ -12,7 +12,6 @@ import {
   Plus,
   Check,
   RefreshCw,
-  CheckCircle2,
   XCircle,
   Play,
   Download,
@@ -85,6 +84,111 @@ function defaultPeriodKey(type) {
     default:
       return "";
   }
+}
+
+// ── skeleton primitives ───────────────────────────────────────────────────────
+
+function Sk({ className = "" }) {
+  return (
+    <div
+      className={`bg-gray-100 dark:bg-zinc-800 rounded animate-pulse ${className}`}
+    />
+  );
+}
+
+function SkeletonAnalysisCard() {
+  return (
+    <Card>
+      <div className="flex items-center gap-2 px-5 pt-3 pb-2.5 border-b border-gray-100 dark:border-white/5">
+        <Sk className="w-6 h-6 rounded-lg" />
+        <Sk className="h-4 w-32" />
+      </div>
+      <div className="px-4 py-3 space-y-0">
+        {[80, 65, 50, 40].map((w, i) => (
+          <div key={i} className="flex items-start gap-3 py-3 border-b border-gray-100 dark:border-white/5 last:border-0">
+            <Sk className="w-5 h-5 shrink-0 mt-0.5 rounded-md" />
+            <div className="flex-1 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Sk className="h-4 w-14 rounded" />
+                <Sk className={`h-4 w-[${w}%]`} />
+              </div>
+              <Sk className="h-1.5 w-full rounded-full" />
+              <Sk className="h-3 w-full" />
+              <Sk className="h-3 w-3/4" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function SkeletonFeedbackCard() {
+  return (
+    <Card>
+      <div className="flex items-center gap-2 px-5 pt-3 pb-2.5 border-b border-gray-100 dark:border-white/5">
+        <Sk className="w-6 h-6 rounded-lg" />
+        <Sk className="h-4 w-36" />
+      </div>
+      <div className="px-4 py-3 space-y-0">
+        {[3, 2, 4].map((_, i) => (
+          <div key={i} className="flex items-start gap-3 py-3 border-b border-gray-100 dark:border-white/5 last:border-0">
+            <Sk className="w-5 h-5 shrink-0 mt-0.5 rounded-md" />
+            <Sk className="h-4 flex-1" />
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function SkeletonKBCard() {
+  return (
+    <Card>
+      <div className="flex items-center gap-2 px-5 pt-3 pb-2.5 border-b border-gray-100 dark:border-white/5">
+        <Sk className="w-6 h-6 rounded-lg" />
+        <Sk className="h-4 w-48" />
+      </div>
+      <div className="px-5 py-4 space-y-0">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="py-3.5 border-b border-gray-100 dark:border-white/5 last:border-0">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Sk className="h-3 w-4" />
+                  <Sk className="h-4 w-2/3" />
+                </div>
+                <div className="flex items-start gap-2">
+                  <Sk className="h-3 w-4 mt-0.5" />
+                  <div className="flex-1 space-y-1">
+                    <Sk className="h-3 w-full" />
+                    <Sk className="h-3 w-4/5" />
+                  </div>
+                </div>
+              </div>
+              <Sk className="shrink-0 h-9 w-24 rounded-lg" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function SkeletonResults() {
+  return (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <SkeletonAnalysisCard />
+        <SkeletonAnalysisCard />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <SkeletonFeedbackCard />
+        <SkeletonFeedbackCard />
+      </div>
+      <SkeletonKBCard />
+    </>
+  );
 }
 
 // ── shared card components — identical to Stats page ─────────────────────────
@@ -278,12 +382,12 @@ function KBEntry({ entry, index, added, adding, onAdd }) {
         <button
           onClick={() => onAdd(index)}
           disabled={added || adding}
-          className={`shrink-0 mt-0.5 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-150 ${
+          className={`shrink-0 mt-0.5 inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold border transition-all duration-200 active:scale-95 ${
             added
               ? "bg-[#EDF3EC] text-[#346538] border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800 cursor-default"
               : adding
-                ? "bg-gray-50 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500 border-gray-200 dark:border-white/10 cursor-wait"
-                : "cursor-pointer bg-white dark:bg-zinc-900 text-lpu-maroon border-lpu-maroon hover:bg-lpu-maroon hover:text-white active:scale-95"
+                ? "bg-lpu-maroon/60 text-white border-lpu-maroon cursor-wait"
+                : "cursor-pointer bg-lpu-maroon text-white border-lpu-maroon hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold disabled:opacity-40 disabled:cursor-not-allowed"
           }`}
         >
           {added ? (
@@ -293,7 +397,7 @@ function KBEntry({ entry, index, added, adding, onAdd }) {
           ) : (
             <Plus size={11} />
           )}
-          {added ? "Added" : adding ? "Adding…" : "Add to KB"}
+          {added ? "Saved" : adding ? "Saving…" : "Save Entry"}
         </button>
       </div>
     </div>
@@ -410,7 +514,6 @@ export default function AdminAIAnalytics() {
   const [status, setStatus] = useState(null);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
-  const [successMsg, setSuccessMsg] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [alreadyAnalyzed, setAlreadyAnalyzed] = useState(false);
   const [checkingPeriod, setCheckingPeriod] = useState(true);
@@ -510,7 +613,6 @@ export default function AdminAIAnalytics() {
   const runAnalysis = async (force = false) => {
     setAnalyzing(true);
     setError(null);
-    setSuccessMsg(null);
     setAlreadyAnalyzed(false);
     setAddedEntries(new Set());
     setKbError(null);
@@ -533,11 +635,6 @@ export default function AdminAIAnalytics() {
       }
       if (!d.success) throw new Error(d.error || "Analysis failed");
 
-      setSuccessMsg(
-        d.ticketCount === 0
-          ? "No closed tickets in selected period."
-          : `${d.ticketCount} ticket${d.ticketCount !== 1 ? "s" : ""} analyzed.`,
-      );
       await Promise.all([
         fetchStatus(),
         fetchResults(periodType, periodKey, customStart, customEnd),
@@ -662,7 +759,6 @@ export default function AdminAIAnalytics() {
                       setAlreadyAnalyzed(false);
                       setCheckingPeriod(true);
                       setError(null);
-                      setSuccessMsg(null);
                     }}
                     label={pt.label}
                   />
@@ -730,22 +826,18 @@ export default function AdminAIAnalytics() {
           </div>
         </div>
 
-        {/* ── inline feedback ── */}
-        {error && (
+        {/* ── error only ── */}
+        {error && !analyzing && (
           <div className="flex items-center gap-2.5 px-4 py-3 bg-[#FDEBEC] dark:bg-rose-950/20 border border-red-100 dark:border-rose-800 rounded-xl text-sm text-[#9F2F2D] dark:text-rose-400">
             <XCircle size={14} className="shrink-0" />
             {error}
           </div>
         )}
-        {successMsg && (
-          <div className="flex items-center gap-2.5 px-4 py-3 bg-[#EDF3EC] dark:bg-green-950/20 border border-green-100 dark:border-green-800 rounded-xl text-sm text-[#346538] dark:text-green-400">
-            <CheckCircle2 size={14} className="shrink-0" />
-            {successMsg}
-          </div>
-        )}
 
         {/* ── results ── */}
-        {hasResults ? (
+        {analyzing ? (
+          <SkeletonResults />
+        ) : hasResults ? (
           <>
             {/* Problems + Solutions — 50/50 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
