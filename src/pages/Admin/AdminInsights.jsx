@@ -334,9 +334,9 @@ function FeedbackCard({ positive, themes }) {
   const bar = positive ? "bg-green-500" : "bg-rose-500";
 
   // support both legacy string[] and new {theme,count}[]
-  const normalized = themes.map((t) =>
-    typeof t === "string" ? { theme: t, count: null } : t,
-  );
+  const normalized = themes
+    .map((t) => (typeof t === "string" ? { theme: t, count: null } : t))
+    .sort((a, b) => (b.count || 0) - (a.count || 0));
   const maxCount = normalized.reduce((m, t) => Math.max(m, t.count || 0), 1);
 
   return (

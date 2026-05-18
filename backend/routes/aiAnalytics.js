@@ -420,8 +420,8 @@ Return ONLY valid JSON:
         ], 500);
         const parsed = parseJson(raw);
         if (parsed) {
-          satisfiedThemes    = (parsed.satisfied_themes    || []).filter((t) => t?.theme?.trim()).slice(0, 6);
-          dissatisfiedThemes = (parsed.dissatisfied_themes || []).filter((t) => t?.theme?.trim()).slice(0, 6);
+          satisfiedThemes    = (parsed.satisfied_themes    || []).filter((t) => t?.theme?.trim()).sort((a, b) => (b.count || 0) - (a.count || 0)).slice(0, 6);
+          dissatisfiedThemes = (parsed.dissatisfied_themes || []).filter((t) => t?.theme?.trim()).sort((a, b) => (b.count || 0) - (a.count || 0)).slice(0, 6);
         }
       } catch (err) {
         console.error("[AI] Feedback error:", err.message);
