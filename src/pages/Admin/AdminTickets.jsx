@@ -439,14 +439,29 @@ export default function AdminTickets() {
         Assignee3: ticket.Assignee3 || null,
       };
       payload[emptySlot] = adminId;
+      setTickets((prev) =>
+        prev.map((t) => (t.id === ticket.id ? { ...t, ...payload } : t)),
+      );
       try {
         const updated = await patchAssignees(ticket, payload);
+        if (updated) {
+          setTickets((prev) =>
+            prev.map((t) => (t.id === ticket.id ? { ...t, ...updated } : t)),
+          );
+        }
+      } catch (e) {
         setTickets((prev) =>
           prev.map((t) =>
-            t.id === ticket.id ? { ...t, ...(updated || payload) } : t,
+            t.id === ticket.id
+              ? {
+                  ...t,
+                  Assignee1: ticket.Assignee1 || null,
+                  Assignee2: ticket.Assignee2 || null,
+                  Assignee3: ticket.Assignee3 || null,
+                }
+              : t,
           ),
         );
-      } catch (e) {
         alert(e.message);
       }
     },
@@ -464,14 +479,29 @@ export default function AdminTickets() {
         Assignee3: ticket.Assignee3 || null,
       };
       payload[slot] = null;
+      setTickets((prev) =>
+        prev.map((t) => (t.id === ticket.id ? { ...t, ...payload } : t)),
+      );
       try {
         const updated = await patchAssignees(ticket, payload);
+        if (updated) {
+          setTickets((prev) =>
+            prev.map((t) => (t.id === ticket.id ? { ...t, ...updated } : t)),
+          );
+        }
+      } catch (e) {
         setTickets((prev) =>
           prev.map((t) =>
-            t.id === ticket.id ? { ...t, ...(updated || payload) } : t,
+            t.id === ticket.id
+              ? {
+                  ...t,
+                  Assignee1: ticket.Assignee1 || null,
+                  Assignee2: ticket.Assignee2 || null,
+                  Assignee3: ticket.Assignee3 || null,
+                }
+              : t,
           ),
         );
-      } catch (e) {
         alert(e.message);
       }
     },
@@ -482,21 +512,30 @@ export default function AdminTickets() {
     async (ticket, value) => {
       if (!isAdmin || !ticket) return;
       const nextPriority = value || null;
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.id === ticket.id ? { ...t, Priority: nextPriority } : t,
+        ),
+      );
       try {
         const { error } = await realtimeSupabase
           .from("Tickets")
           .update({ Priority: nextPriority })
           .eq("id", ticket.id);
         if (error) {
+          setTickets((prev) =>
+            prev.map((t) =>
+              t.id === ticket.id ? { ...t, Priority: ticket.Priority } : t,
+            ),
+          );
           alert(error.message || "Failed to update priority");
-          return;
         }
+      } catch (e) {
         setTickets((prev) =>
           prev.map((t) =>
-            t.id === ticket.id ? { ...t, Priority: nextPriority } : t,
+            t.id === ticket.id ? { ...t, Priority: ticket.Priority } : t,
           ),
         );
-      } catch (e) {
         console.error("Unexpected error:", e);
       }
     },
