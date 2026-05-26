@@ -628,6 +628,31 @@ export default function TicketChat({ adminView = false } = {}) {
         return;
       }
 
+      if (data && data[0]) {
+        const row = data[0];
+        const alreadySeen = seenMessageIdsRef.current.has(row.id);
+        seenMessageIdsRef.current.add(row.id);
+        setMessages((prev) => {
+          if (alreadySeen) {
+            return prev.filter((m) => m.id !== tempId);
+          }
+          return prev.map((m) =>
+            m.id === tempId
+              ? {
+                id: row.id,
+                senderId: row.sender_id,
+                senderRole: row.sender_role,
+                senderName: row.sender_name || senderName,
+                senderEmail: row.sender_email || senderEmail || null,
+                text: row.message_text,
+                attachments: parseMessageAttachments(row.attachments),
+                time: row.created_at,
+              }
+              : m,
+          );
+        });
+      }
+
       if (adminView && senderId && ticket) {
         const slots = ["Assignee1", "Assignee2", "Assignee3"];
         const assigned = slots.map((s) => ticket[s]).filter(Boolean);
@@ -658,29 +683,6 @@ export default function TicketChat({ adminView = false } = {}) {
               cacheTicket(id, assignJson.data);
             }
           }
-        }
-      }
-
-      if (data && data[0]) {
-        const row = data[0];
-        if (!seenMessageIdsRef.current.has(row.id)) {
-          seenMessageIdsRef.current.add(row.id);
-          setMessages((prev) => {
-            return prev.map((m) =>
-              m.id === tempId
-                ? {
-                  id: row.id,
-                  senderId: row.sender_id,
-                  senderRole: row.sender_role,
-                  senderName: row.sender_name || senderName,
-                  senderEmail: row.sender_email || senderEmail || null,
-                  text: row.message_text,
-                  attachments: parseMessageAttachments(row.attachments),
-                  time: row.created_at,
-                }
-                : m,
-            );
-          });
         }
       }
     } catch (err) {
