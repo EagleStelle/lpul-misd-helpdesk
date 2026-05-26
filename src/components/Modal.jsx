@@ -272,7 +272,7 @@ export function FormModal({
         <button
           type="button"
           onClick={onClose}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-lpu-maroon hover:bg-gray-100 dark:text-zinc-500 dark:hover:text-lpu-gold dark:hover:bg-zinc-800 transition-colors"
+          className="p-1.5 rounded-lg text-gray-400 hover:text-lpu-maroon hover:bg-gray-100 dark:text-zinc-500 dark:hover:text-lpu-gold dark:hover:bg-zinc-800 transition-colors cursor-pointer"
           aria-label="Close"
         >
           <X size={18} />
@@ -537,7 +537,7 @@ function AppearanceSection({ darkMode, onToggleDark }) {
             onChange={onToggleDark}
             className="sr-only peer"
           />
-          <div className="relative w-11 h-6 rounded-full bg-zinc-300 dark:bg-zinc-600 peer-checked:bg-lpu-maroon dark:peer-checked:bg-lpu-maroon transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:rounded-full after:shadow after:transition-transform after:duration-200 peer-checked:after:translate-x-5" />
+          <div className="relative w-11 h-6 rounded-full bg-zinc-300 dark:bg-zinc-600 peer-checked:bg-lpu-maroon dark:peer-checked:bg-lpu-maroon transition-colors duration-200 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-5 after:h-5 after:bg-white after:rounded-full after:shadow after:transition-transform after:duration-200 peer-checked:after:translate-x-5 cursor-pointer" />
         </label>
       </div>
     </div>
@@ -615,7 +615,7 @@ export function SettingsModal({ open, onClose, darkMode, onToggleDark }) {
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 dark:text-zinc-500 hover:text-lpu-maroon hover:bg-gray-100 dark:hover:text-lpu-gold dark:hover:bg-zinc-800 transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 dark:text-zinc-500 hover:text-lpu-maroon hover:bg-gray-100 dark:hover:text-lpu-gold dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             aria-label="Close"
           >
             <X size={18} />
