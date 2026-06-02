@@ -7,7 +7,6 @@ import {
   Lightbulb,
   ThumbsUp,
   ThumbsDown,
-  AlertTriangle,
   BookOpen,
   Plus,
   Check,
@@ -595,11 +594,9 @@ export default function AdminAIAnalytics() {
 
   const { showLoading, hideLoading } = useLoading();
 
-  const [status, setStatus] = useState(null);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [alreadyAnalyzed, setAlreadyAnalyzed] = useState(false);
   const [checkingPeriod, setCheckingPeriod] = useState(true);
 
   const [periodType, setPeriodType] = useState("monthly");
@@ -638,25 +635,12 @@ export default function AdminAIAnalytics() {
       });
       const d = await r.json();
       if (d.success) {
-        setAlreadyAnalyzed(d.analyzed);
         setPeriodTicketCount(d.ticketCount ?? null);
       }
     } catch {
       /* non-fatal */
     } finally {
       setCheckingPeriod(false);
-    }
-  }, []);
-
-  const fetchStatus = useCallback(async () => {
-    try {
-      const r = await fetch(apiUrl("/api/ai-analytics/status"), {
-        headers: getAuthHeader(),
-      });
-      const d = await r.json();
-      if (d.success) setStatus(d);
-    } catch {
-      /* non-fatal */
     }
   }, []);
 
@@ -682,10 +666,7 @@ export default function AdminAIAnalytics() {
   useEffect(() => {
     (async () => {
       showLoading();
-      await Promise.all([
-        fetchStatus(),
-        fetchResults(periodType, periodKey, customStart, customEnd),
-      ]);
+      await fetchResults(periodType, periodKey, customStart, customEnd);
       hideLoading();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -735,7 +716,7 @@ export default function AdminAIAnalytics() {
             customStart: cs,
             customEnd: ce,
           } = jobPeriodRef.current || {};
-          await Promise.all([fetchStatus(), fetchResults(pt, pk, cs, ce)]);
+          await fetchResults(pt, pk, cs, ce);
           await checkPeriod(pt, pk, cs, ce);
         } else if (d.status === "failed") {
           clearInterval(poll);
@@ -752,10 +733,10 @@ export default function AdminAIAnalytics() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeJobId]);
 
-  const runAnalysis = async (force = false) => {
+  // Every analysis is a force-run — overwrites any existing entry for the period.
+  const runAnalysis = async () => {
     setAnalyzing(true);
     setError(null);
-    setAlreadyAnalyzed(false);
     setAddedEntries(new Set());
     setKbError(null);
     setJobProgress(null);
@@ -767,8 +748,8 @@ export default function AdminAIAnalytics() {
     try {
       const body =
         periodType === "custom"
-          ? { period_type: periodType, customStart, customEnd, force }
-          : { period_type: periodType, period_key: periodKey, force };
+          ? { period_type: periodType, customStart, customEnd, force: true }
+          : { period_type: periodType, period_key: periodKey, force: true };
 
       const r = await fetch(apiUrl("/api/ai-analytics/analyze"), {
         method: "POST",
@@ -777,11 +758,6 @@ export default function AdminAIAnalytics() {
       });
       const d = await r.json();
 
-      if (d.alreadyAnalyzed) {
-        setAlreadyAnalyzed(true);
-        setAnalyzing(false);
-        return;
-      }
       if (!d.success) throw new Error(d.error || "Analysis failed");
 
       // Job started — polling effect takes over from here
@@ -876,7 +852,6 @@ export default function AdminAIAnalytics() {
     />,
   );
 
-  const unanalyzedCount = alreadyAnalyzed ? 0 : (periodTicketCount ?? null);
   const unknownRe =
     /^(unknown|unidentified|other issue|n\/a|none|unclear|unspecified)$/i;
   const problems = [...(results?.results?.problems || [])]
@@ -935,7 +910,6 @@ export default function AdminAIAnalytics() {
                       setPeriodType(pt.value);
                       if (pt.value !== "custom")
                         setPeriodKey(defaultPeriodKey(pt.value));
-                      setAlreadyAnalyzed(false);
                       setCheckingPeriod(true);
                       setError(null);
                     }}
@@ -955,77 +929,39 @@ export default function AdminAIAnalytics() {
               />
             </div>
 
-            {/* Right: stats + action buttons */}
+            {/* Right: period-scoped closed count + action button */}
             <div className="flex items-center gap-3 flex-wrap">
-              {status != null && (
-                <span className="flex items-center gap-2 text-xs">
-                  <span>
-                    <span className="font-semibold tabular-nums text-gray-800 dark:text-zinc-200">
-                      {status.totalClosed}
-                    </span>
-                    <span className="ml-1 text-gray-400 dark:text-zinc-500">
-                      closed
-                    </span>
-                  </span>
-                  <span className="text-gray-300 dark:text-white/10 select-none">
-                    ·
-                  </span>
-                  <span>
-                    <span className="font-semibold tabular-nums text-gray-800 dark:text-zinc-200">
-                      {checkingPeriod ? "—" : (unanalyzedCount ?? "—")}
-                    </span>
-                    <span className="ml-1 text-gray-400 dark:text-zinc-500">
-                      unanalyzed
-                    </span>
-                  </span>
+              <span className="text-xs">
+                <span className="font-semibold tabular-nums text-gray-800 dark:text-zinc-200">
+                  {checkingPeriod ? "—" : (periodTicketCount ?? "—")}
                 </span>
-              )}
+                <span className="ml-1 text-gray-400 dark:text-zinc-500">
+                  closed
+                </span>
+              </span>
 
-              <div className="flex items-center gap-1.5">
-                <div
-                  title={
-                    periodType === "custom"
-                      ? "Custom range is view-only, please select a fixed period to analyze"
-                      : undefined
+              <div
+                title={
+                  periodType === "custom"
+                    ? "Custom range is view-only, please select a fixed period to analyze"
+                    : undefined
+                }
+              >
+                <button
+                  type="button"
+                  onClick={() => runAnalysis()}
+                  disabled={
+                    analyzing || checkingPeriod || periodType === "custom"
                   }
+                  className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold whitespace-nowrap bg-lpu-maroon text-white border border-lpu-maroon hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  <button
-                    type="button"
-                    onClick={() => runAnalysis(false)}
-                    disabled={
-                      analyzing ||
-                      checkingPeriod ||
-                      alreadyAnalyzed ||
-                      periodType === "custom"
-                    }
-                    className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold whitespace-nowrap bg-lpu-maroon text-white border border-lpu-maroon hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    {analyzing ? (
-                      <RefreshCw size={11} className="animate-spin" />
-                    ) : (
-                      <Play size={16} />
-                    )}
-                    Analyze
-                  </button>
-                </div>
-
-                <div
-                  title={
-                    periodType === "custom"
-                      ? "Custom range is view-only — select a fixed period to analyze"
-                      : undefined
-                  }
-                >
-                  <button
-                    type="button"
-                    onClick={() => runAnalysis(true)}
-                    disabled={analyzing || periodType === "custom"}
-                    className="inline-flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-semibold whitespace-nowrap bg-white dark:bg-zinc-900 text-lpu-maroon dark:text-lpu-gold border border-lpu-maroon dark:border-lpu-gold hover:bg-lpu-gold hover:text-lpu-maroon hover:border-lpu-gold dark:hover:bg-lpu-gold dark:hover:text-lpu-maroon dark:hover:border-lpu-gold active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                  >
-                    <AlertTriangle size={16} />
-                    Force Analyze
-                  </button>
-                </div>
+                  {analyzing ? (
+                    <RefreshCw size={11} className="animate-spin" />
+                  ) : (
+                    <Play size={16} />
+                  )}
+                  Analyze
+                </button>
               </div>
             </div>
           </div>
