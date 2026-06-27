@@ -1,0 +1,20 @@
+services:
+  lpul-misd-helpdesk:
+    image: eaglestelle/lpul-misd-helpdesk:latest
+    build:
+      context: .
+      target: app
+    environment:
+      VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:?VITE_SUPABASE_URL is required}
+      VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:?VITE_SUPABASE_ANON_KEY is required}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:?SUPABASE_SERVICE_ROLE_KEY is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      MAGIC_LINK_ALLOWED_DOMAINS: ${MAGIC_LINK_ALLOWED_DOMAINS:-@lpulaguna.edu.ph,@lpusc.edu.ph}
+      ADMIN_SEED_FULL_NAME: ${ADMIN_SEED_FULL_NAME:-System Admin}
+      ADMIN_SEED_EMAIL: ${ADMIN_SEED_EMAIL:-}
+      ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+    ports:
+      - "8080:5000"
+    restart: unless-stopped
