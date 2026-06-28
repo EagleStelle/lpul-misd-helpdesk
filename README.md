@@ -1,4 +1,4 @@
-# LPU MISD Helpdesk
+# LPU-L MISD Helpdesk
 
 LPU MISD Helpdesk is a ticketing and support application for MISD service requests. It includes a React/Vite frontend, an Express API, Supabase-backed data/auth flows, ticket chat, admin management, analytics, knowledge base features, and an optional AI chatbot.
 
